@@ -1,41 +1,39 @@
 package com.ruoyi.system.domain.req;
 
+import jnr.ffi.Struct;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.io.Serializable;
 
 /**
  * 大额提现四号签提交（占位接口入参）
  */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class BscWithdrawalSignSubmit implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    //申请记录ID
+    private Long withdrawalLogId;
 
-    private Long id;
-    /** 前端签名结果（hex 等） */
-    private String signature;
-    /** 签名所用地址 */
+    //"是否通过 1:通过 0:驳回")
+    private Integer approved;
+
+    //"备注")
+    private String remark;
+
+    //"签名人地址")
     private String signerAddress;
 
-    public Long getId() {
-        return id;
-    }
+    //"签名摘要")
+    private String signDigest;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    //"签名结果")
+    private String signature;
 
-    public String getSignature() {
-        return signature;
-    }
-
-    public void setSignature(String signature) {
-        this.signature = signature;
-    }
-
-    public String getSignerAddress() {
-        return signerAddress;
-    }
-
-    public void setSignerAddress(String signerAddress) {
-        this.signerAddress = signerAddress;
-    }
+    //"审核失败原因")
+    private String failReason;
 }

@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -62,13 +63,7 @@ public class BscWithdrawalLogController extends BaseController {
         if (row == null) {
             return AjaxResult.error("记录不存在或不符合大额四号待签条件");
         }
-        String signPayload = IdUtils.fastSimpleUUID();
-        AjaxResult ajax = AjaxResult.success();
-        ajax.put("id", row.getId());
-        ajax.put("orderNumber", row.getOrderNumber());
-        ajax.put("signPayload", signPayload);
-        ajax.put("message", "占位参数，请用前端钱包对 signPayload 签名");
-        return ajax;
+        return AjaxResult.success(bscWithdrawalLogService.buildWithdrawRequest(row));
     }
 
     /**
@@ -78,11 +73,7 @@ public class BscWithdrawalLogController extends BaseController {
     @Log(title = "BSC大额提现签名提交", businessType = BusinessType.UPDATE)
     @PostMapping("/submitSign")
     @ResponseBody
-    public AjaxResult submitSign(@RequestBody BscWithdrawalSignSubmit body) {
-        if (body == null || body.getId() == null) {
-            return AjaxResult.error("缺少 id");
-        }
-        // TODO: 校验签名、更新 sign_progress_four 等
-        return AjaxResult.success("已接收（占位，未落库）");
+    public AjaxResult submitSign(@RequestBody BscWithdrawalSignSubmit withdrawalAuditReq) {
+       return bscWithdrawalLogService.submitSign(withdrawalAuditReq);
     }
 }

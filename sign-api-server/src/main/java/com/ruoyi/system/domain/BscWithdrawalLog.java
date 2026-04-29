@@ -7,6 +7,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 
 /**
@@ -63,7 +64,7 @@ public class BscWithdrawalLog extends BaseEntity {
     /** 大额状态 0:未判断 1:是大额订单 2:不是大额订单 */
     private Integer isLargeAmount;
 
-    private Long deadline;
+    private BigInteger deadline;
 
     private Integer signProgressOne;
 
