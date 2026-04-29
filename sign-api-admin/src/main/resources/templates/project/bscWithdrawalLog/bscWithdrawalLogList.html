@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('BSC大额提现（四号待签）')" />
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="formId">
+                <div class="select-list">
+                    <ul>
+                        <li>
+                            <label>用户ID：</label>
+                            <input type="text" name="userId" placeholder="可选"/>
+                        </li>
+                        <li>
+                            <label>订单号：</label>
+                            <input type="text" name="orderNumber" placeholder="可选"/>
+                        </li>
+                        <li class="select-time">
+                            <label>创建时间：</label>
+                            <input type="text" class="time-input" id="startTime" autocomplete="off" placeholder="开始"
+                                   name="params[beginTime]"/>
+                            <span>-</span>
+                            <input type="text" class="time-input" id="endTime" autocomplete="off" placeholder="结束"
+                                   name="params[endTime]"/>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i
+                                    class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i
+                                    class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <div class="btn-group-sm" id="toolbar" role="group">
+            <a class="btn btn-primary" onclick="signAudit()" shiro:hasPermission="project:bscWithdrawalLog:sign">
+                <i class="fa fa-pencil-square-o"></i> 签名审核
+            </a>
+        </div>
+
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+        </div>
+
+        <div class="col-sm-12" style="margin-top:15px;">
+            <label>待签名内容（后端返回 signPayload，钱包将对此文本做 personal_sign / signMessage）：</label>
+            <textarea id="signPayloadArea" class="form-control" rows="2" readonly placeholder="点击「签名审核」后显示"></textarea>
+        </div>
+        <div class="col-sm-12" style="margin-top:10px;">
+            <label>上次签名结果（只读）：</label>
+            <input type="text" id="signatureInput" class="form-control" readonly placeholder="签名成功后自动填入"/>
+        </div>
+        <div class="col-sm-12" style="margin-top:10px;">
+            <label>签名地址（只读）：</label>
+            <input type="text" id="signerAddressInput" class="form-control" readonly placeholder="当前 MetaMask 账户"/>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer"/>
+<script th:src="@{/js/ethers.umd.min.js}"></script>
+<script th:inline="javascript">
+    var prefix = ctx + "project/bscWithdrawalLog";
+
+    layui.use('laydate', function () {
+        var laydate = layui.laydate;
+        laydate.render({elem: '#startTime', type: 'datetime'});
+        laydate.render({elem: '#endTime', type: 'datetime'});
+    });
+
+    $(function () {
+        var options = {
+            url: prefix + "/list",
+            modalName: "BSC提现",
+            singleSelect: true,
+            clickToSelect: true,
+            columns: [{
+                checkbox: true
+            },
+                {field: 'id', title: 'ID', width: '80'},
+                {field: 'orderNumber', title: '订单号'},
+                {field: 'userId', title: '用户ID'},
+                {
+                    field: 'coinId', title: '币种', formatter: function (v) {
+                        if (v === 1) return 'WX';
+                        if (v === 2) return 'WEBX';
+                        return v;
+                    }
+                },
+                {field: 'amount', title: '金额'},
+                {
+                    field: 'status', title: '提现状态', formatter: function (v) {
+                        var m = {0: '发起', 1: '进行中', 2: '成功', 3: '失败'};
+                        return m[v] != null ? m[v] : v;
+                    }
+                },
+                {
+                    field: 'signProgressFour', title: '四号签', formatter: function () {
+                        return '待签(0)';
+                    }
+                },
+                {field: 'fromAddress', title: '出账地址', formatter: fmtAddr},
+                {field: 'toAddress', title: '入账地址', formatter: fmtAddr},
+                {field: 'hash', title: 'Hash', formatter: fmtAddr},
+                {field: 'createTime', title: '创建时间'}
+            ]
+        };
+        $.table.init(options);
+    });
+
+    function fmtAddr(v) {
+        if (!v) return '';
+        return v.length > 18 ? v.substring(0, 10) + '…' + v.substring(v.length - 6) : v;
+    }
+
+    function getSingleSelectedRow() {
+        var rows = $('#bootstrap-table').bootstrapTable('getSelections');
+        if (!rows || rows.length !== 1) {
+            return null;
+        }
+        return rows[0];
+    }
+
+    /**
+     * 签名审核：请求后端 signPayload → 唤起小狐狸对内容签名 → 将签名与地址提交后端
+     */
+    function signAudit() {
+        var row = getSingleSelectedRow();
+        if (!row) {
+            $.modal.msgWarning("请先选中一条数据（仅能选一条）");
+            return;
+        }
+        if (typeof ethers === 'undefined' || !ethers.BrowserProvider) {
+            $.modal.msgError("页面未加载 ethers.js，请检查静态资源 /js/ethers.umd.min.js");
+            return;
+        }
+        if (!window.ethereum) {
+            $.modal.msgError("未检测到钱包插件（window.ethereum），请安装并解锁 MetaMask（小狐狸）");
+            return;
+        }
+
+        var loadIdx = layer.load(2, {shade: [0.2, '#000']});
+        $.ajax({
+            url: prefix + "/signParams/" + row.id,
+            type: "post",
+            dataType: "json",
+            success: function (res) {
+                layer.close(loadIdx);
+                if (res.code !== 0) {
+                    $.modal.msgError(res.msg || '获取签名参数失败');
+                    return;
+                }
+                var signPayload = res.signPayload != null ? String(res.signPayload) : '';
+                var recordId = res.id != null ? res.id : row.id;
+                $("#signPayloadArea").val(signPayload);
+
+                doMetaMaskSignAndSubmit(recordId, signPayload);
+            },
+            error: function () {
+                layer.close(loadIdx);
+                $.modal.msgError("获取签名参数请求失败");
+            }
+        });
+    }
+
+    function doMetaMaskSignAndSubmit(recordId, signPayload) {
+        var waitIdx = layer.msg('请在 MetaMask 中确认签名…', {icon: 16, shade: 0.3, time: 0});
+        var p = Promise.resolve()
+            .then(function () {
+                return window.ethereum.request({method: 'eth_requestAccounts'});
+            })
+            .then(function () {
+                var provider = new ethers.BrowserProvider(window.ethereum);
+                return provider.getSigner();
+            })
+            .then(function (signer) {
+                return signer.getAddress().then(function (addr) {
+                    return signer.signMessage(signPayload).then(function (signature) {
+                        return {signature: signature, signerAddress: addr};
+                    });
+                });
+            });
+
+        p.then(function (out) {
+            layer.close(waitIdx);
+            $("#signatureInput").val(out.signature);
+            $("#signerAddressInput").val(out.signerAddress);
+
+            var submitLoad = layer.load(2, {shade: [0.2, '#000']});
+            $.ajax({
+                url: prefix + "/submitSign",
+                type: "post",
+                contentType: "application/json;charset=UTF-8",
+                data: JSON.stringify({
+                    id: recordId,
+                    signature: out.signature,
+                    signerAddress: out.signerAddress
+                }),
+                dataType: "json",
+                success: function (subRes) {
+                    layer.close(submitLoad);
+                    if (subRes.code === 0) {
+                        $.modal.msgSuccess(subRes.msg || "提交成功");
+                        $.table.refresh();
+                    } else {
+                        $.modal.msgError(subRes.msg || "提交失败");
+                    }
+                },
+                error: function () {
+                    layer.close(submitLoad);
+                    $.modal.msgError("提交签名结果请求失败");
+                }
+            });
+        }).catch(function (e) {
+            layer.close(waitIdx);
+            var msg = (e && e.message) ? e.message : String(e);
+            if (msg && (msg.indexOf('reject') >= 0 || msg.indexOf('denied') >= 0 || msg.indexOf('User denied') >= 0)) {
+                $.modal.msgWarning("已取消钱包签名");
+            } else {
+                $.modal.msgError("钱包签名失败：" + msg);
+            }
+        });
+    }
+</script>
+</body>
+</html>

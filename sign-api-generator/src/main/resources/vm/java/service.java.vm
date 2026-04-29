@@ -1,0 +1,57 @@
+package ${packageName}.service;
+
+import java.util.List;
+import ${packageName}.domain.${ClassName};
+#if($table.tree)
+import com.ruoyi.common.core.domain.Ztree;
+#end
+
+/**
+ * ${functionName}Service接口
+ * 
+ * @author ${author}
+ * @date ${datetime}
+ */
+public interface ${ClassName}Service
+{
+    /**
+     * 查询${functionName}
+     * 
+     * @param ${pkColumn.javaField} ${functionName}ID
+     * @return ${functionName}
+     */
+    ${ClassName} select${ClassName}ById(Integer ${pkColumn.javaField});
+
+    /**
+     * 查询${functionName}列表
+     * 
+     * @param ${className} ${functionName}
+     * @return ${functionName}集合
+     */
+    List<${ClassName}> select${ClassName}List(${ClassName} ${className});
+
+    /**
+     * 查询${functionName}对象
+     *
+     * @param ${className} ${functionName}
+     * @return ${functionName}
+     */
+     ${ClassName} find${ClassName}(${ClassName} ${className});
+
+    /**
+     * 修改或者添加${functionName}
+     * 
+     * @param ${className} ${functionName}
+     * @return 结果
+     */
+    int updateOrAdd${ClassName}(${ClassName} ${className});
+
+    /**
+     * 批量删除${functionName}
+     *
+     * @param ids 需要删除的数据ID
+     * @return 结果
+     */
+    int delete${ClassName}ByIds(String ids);
+
+}

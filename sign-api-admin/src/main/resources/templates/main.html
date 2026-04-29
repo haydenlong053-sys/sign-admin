@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+                "Microsoft YaHei", sans-serif;
+            background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(99, 102, 241, 0.35), transparent 55%),
+                radial-gradient(ellipse 90% 60% at 100% 50%, rgba(14, 165, 233, 0.12), transparent 50%),
+                radial-gradient(ellipse 80% 50% at 0% 80%, rgba(79, 70, 229, 0.15), transparent 45%),
+                linear-gradient(165deg, #0f172a 0%, #1e293b 45%, #0f172a 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 560px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .clock-panel {
+            position: relative;
+            padding: 2.25rem 2rem 2rem;
+            border-radius: 24px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow:
+                0 4px 24px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+                0 1px 0 rgba(255, 255, 255, 0.08) inset;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .clock-panel::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg,
+                    rgba(129, 140, 248, 0.45),
+                    rgba(56, 189, 248, 0.2) 40%,
+                    rgba(99, 102, 241, 0.35));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            opacity: 0.85;
+        }
+
+        .clock-date {
+            text-align: center;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+            margin-bottom: 1.25rem;
+        }
+
+        .clock-date .weekday {
+            display: inline-block;
+            margin-left: 0.5rem;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #a5b4fc;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(129, 140, 248, 0.35);
+        }
+
+        .clock-time-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+
+        .time-unit {
+            font-size: clamp(2.75rem, 10vw, 4rem);
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.02em;
+            line-height: 1;
+            color: #f8fafc;
+            text-shadow: 0 2px 24px rgba(129, 140, 248, 0.35);
+        }
+
+        .time-sep {
+            font-size: clamp(2rem, 7vw, 2.75rem);
+            font-weight: 300;
+            color: #64748b;
+            padding: 0 0.1rem;
+            animation: tick 1s ease-in-out infinite;
+        }
+
+        @keyframes tick {
+            0%, 100% { opacity: 0.35; }
+            50% { opacity: 0.95; }
+        }
+
+        .clock-sub {
+            text-align: center;
+            margin-top: 1.35rem;
+            font-size: 0.8125rem;
+            color: #64748b;
+            letter-spacing: 0.04em;
+        }
+
+        .clock-sub strong {
+            color: #818cf8;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <div class="clock-panel">
+        <div class="clock-date" id="clock-date"></div>
+        <div class="clock-time-row" aria-live="polite">
+            <span class="time-unit" id="clock-h">00</span>
+            <span class="time-sep">:</span>
+            <span class="time-unit" id="clock-m">00</span>
+            <span class="time-sep">:</span>
+            <span class="time-unit" id="clock-s">00</span>
+        </div>
+        <p class="clock-sub">当前服务器本地时间 · <strong id="clock-zone"></strong></p>
+    </div>
+</div>
+
+<script>
+    var WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+
+    function pad(n) {
+        return String(n).padStart(2, "0");
+    }
+
+    function updateClock() {
+        var now = new Date();
+        var y = now.getFullYear();
+        var mo = now.getMonth() + 1;
+        var d = now.getDate();
+        var wd = WEEKDAYS[now.getDay()];
+        document.getElementById("clock-date").innerHTML =
+            y + "年" + mo + "月" + d + "日 <span class=\"weekday\">" + wd + "</span>";
+
+        document.getElementById("clock-h").textContent = pad(now.getHours());
+        document.getElementById("clock-m").textContent = pad(now.getMinutes());
+        document.getElementById("clock-s").textContent = pad(now.getSeconds());
+
+        try {
+            document.getElementById("clock-zone").textContent =
+                Intl.DateTimeFormat().resolvedOptions().timeZone || "本地";
+        } catch (e) {
+            document.getElementById("clock-zone").textContent = "本地";
+        }
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+</script>
+</body>
+
+</html>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BscWithdrawalLogMapper">
+
+    <resultMap type="com.ruoyi.system.domain.BscWithdrawalLog" id="BscWithdrawalLogResult">
+        <result property="id" column="id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="remark" column="remark"/>
+        <result property="flag" column="flag"/>
+        <result property="originType" column="origin_type"/>
+        <result property="userId" column="user_id"/>
+        <result property="coinId" column="coin_id"/>
+        <result property="billingTime" column="billing_time"/>
+        <result property="fromAddress" column="from_address"/>
+        <result property="toAddress" column="to_address"/>
+        <result property="hash" column="hash"/>
+        <result property="status" column="status"/>
+        <result property="signFinished" column="sign_finished"/>
+        <result property="orderNumber" column="order_number"/>
+        <result property="amount" column="amount"/>
+        <result property="redemption" column="redemption"/>
+        <result property="largeAmountPassed" column="large_amount_passed"/>
+        <result property="isLargeAmount" column="is_large_amount"/>
+        <result property="deadline" column="deadline"/>
+        <result property="signProgressOne" column="sign_progress_one"/>
+        <result property="signProgressTwo" column="sign_progress_two"/>
+        <result property="signProgressThree" column="sign_progress_three"/>
+        <result property="signProgressFour" column="sign_progress_four"/>
+    </resultMap>
+
+    <sql id="selectBscWithdrawalLogVo">
+        select id, create_time, update_time, create_by, update_by, remark, flag,
+               origin_type, user_id, coin_id, billing_time, from_address, to_address,
+               hash, status, sign_finished, order_number, amount, redemption,
+               large_amount_passed, is_large_amount, deadline,
+               sign_progress_one, sign_progress_two, sign_progress_three, sign_progress_four
+        from bsc_withdrawal_log
+    </sql>
+
+    <select id="selectBscWithdrawalLogList" parameterType="com.ruoyi.system.domain.BscWithdrawalLog"
+            resultMap="BscWithdrawalLogResult">
+        <include refid="selectBscWithdrawalLogVo"/>
+        <where>
+            and flag = 0
+            and is_large_amount = 1
+            and sign_progress_four = 0
+            <if test="userId != null and userId != ''">
+                and user_id = #{userId}
+            </if>
+            <if test="orderNumber != null">
+                and order_number = #{orderNumber}
+            </if>
+            <if test="params.beginTime != null and params.beginTime != '' and params.endTime != null and params.endTime != ''">
+                and create_time between #{params.beginTime} and #{params.endTime}
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectBscWithdrawalLogById" parameterType="long" resultMap="BscWithdrawalLogResult">
+        <include refid="selectBscWithdrawalLogVo"/>
+        where id = #{id}
+          and flag = 0
+          and is_large_amount = 1
+          and sign_progress_four = 0
+    </select>
+</mapper>

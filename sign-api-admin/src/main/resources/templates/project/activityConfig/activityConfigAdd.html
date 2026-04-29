@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<head>
+    <th:block th:include="include :: header('新增活动分类配置')" />
+</head>
+<body class="white-bg">
+    <div class="wrapper wrapper-content animated fadeInRight ibox-content">
+        <form class="form-horizontal m" id="form-config-add">
+            <div class="form-group">
+                <label class="col-sm-3 control-label is-required">分类名称：</label>
+                <div class="col-sm-8">
+                    <input name="activityName" class="form-control" type="text" required>
+                </div>
+            </div>
+
+            <div class="form-group">    
+                <label class="col-sm-3 control-label is-required">语言：</label>
+                <div class="col-sm-8">
+                    <select name="lang" class="form-control" type="text" required>
+                        <option value="zh_CN">中文</option>
+                        <option value="en_US">英文</option>
+                        <option value="ko_KR">韩文</option>
+                        <option value="vi_VN">越文</option>
+                        <option value="ru_RU">俄文</option>
+                        <option value="pt_PT">葡萄牙</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+    <th:block th:include="include :: footer" />
+    <script th:inline="javascript">
+        var prefix = ctx + "project/activityConfig"
+        $("#form-config-add").validate({
+            focusCleanup: true
+        });
+
+        function submitHandler() {
+            if ($.validate.form()) {
+                $.operate.save(prefix + "/add", $('#form-config-add').serialize());
+            }
+        }
+    </script>
+</body>
+</html>

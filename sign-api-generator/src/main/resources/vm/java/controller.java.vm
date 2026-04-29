@@ -1,0 +1,163 @@
+package ${packageName}.controller;
+
+import com.ruoyi.common.utils.StringUtils;
+import java.util.List;
+import com.ruoyi.common.core.domain.entity.SysUser;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.enums.BusinessType;
+import ${packageName}.domain.${ClassName};
+import ${packageName}.service.${ClassName}Service;
+import com.ruoyi.common.core.controller.BaseController;
+import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.utils.poi.ExcelUtil;
+#if($table.crud || $table.sub)
+#elseif($table.tree)
+import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.core.domain.Ztree;
+#end
+
+/**
+ * ${functionName}Controller
+ * 
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Controller
+@RequestMapping("/project/${className}")
+public class ${ClassName}Controller extends BaseController
+{
+    private String prefix = "project/${className}";
+
+    @Autowired
+    private ${ClassName}Service ${className}Service;
+
+    @RequiresPermissions("project:${className}:view")
+    @GetMapping()
+    public String ${className}()
+    {
+        return prefix + "/${className}List";
+    }
+
+    /**
+     * 查询${functionName}列表
+     */
+    @RequiresPermissions("project:${className}:list")
+    @PostMapping("/list")
+    @ResponseBody
+    public TableDataInfo list(${ClassName} ${className})
+    {
+        startPage();
+        List<${ClassName}> list = ${className}Service.select${ClassName}List(${className});
+        return getDataTable(list);
+    }
+
+    /**
+     * 查询${functionName}对象
+     */
+    @RequiresPermissions("project:${className}:${className}")
+    @PostMapping("/${className}")
+    @ResponseBody
+    public ${ClassName} find${ClassName}(${ClassName} ${className})
+    {
+        ${className} = ${className}Service.find${ClassName}(${className});
+        return ${className};
+    }
+
+    /**
+     * 导出${functionName}列表
+     */
+    @RequiresPermissions("project:${className}:export")
+    @Log(title = "${functionName}", businessType = BusinessType.EXPORT)
+    @PostMapping("/export")
+    @ResponseBody
+    public AjaxResult export(${ClassName} ${className})
+    {
+        List<${ClassName}> list = ${className}Service.select${ClassName}List(${className});
+        ExcelUtil<${ClassName}> util = new ExcelUtil<${ClassName}>(${ClassName}.class);
+        return util.exportExcel(list, "${functionName}");
+    }
+
+    /**
+     * 新增${functionName}
+     */
+    @GetMapping("/add")
+    public String add()
+    {
+        return prefix + "/${className}Add";
+    }
+    /**
+     * 新增${functionName}
+     */
+    @GetMapping(value = { "/add/{${pkColumn.javaField}}", "/add/" })
+    public String add(@PathVariable(value = "${pkColumn.javaField}", required = false) Integer ${pkColumn.javaField}, ModelMap mmap)
+    {
+        if (StringUtils.isNotNull(${pkColumn.javaField}))
+        {
+            mmap.put("${className}", ${className}Service.select${ClassName}ById(${pkColumn.javaField}));
+        }
+        return prefix + "/${className}Add";
+    }
+
+    /**
+     * 新增保存${functionName}
+     */
+    @RequiresPermissions("project:${className}:add")
+    @Log(title = "${functionName}", businessType = BusinessType.INSERT)
+    @PostMapping("/add")
+    @ResponseBody
+    public AjaxResult addSave(${ClassName} ${className})
+    {
+        SysUser sysUser = getSysUser();
+        ${className}.setCreateBy(sysUser.getUserName());
+        return toAjax(${className}Service.updateOrAdd${ClassName}(${className}));
+    }
+
+    /**
+     * 修改${functionName}
+     */
+    @GetMapping("/edit/{${pkColumn.javaField}}")
+    public String edit(@PathVariable("${pkColumn.javaField}") Integer ${pkColumn.javaField}, ModelMap mmap)
+    {
+        ${ClassName} ${className} = ${className}Service.select${ClassName}ById(${pkColumn.javaField});
+        mmap.put("${className}", ${className});
+        return prefix + "/${className}Edit";
+    }
+
+    /**
+     * 修改保存${functionName}
+     */
+    @RequiresPermissions("project:${className}:edit")
+    @Log(title = "${functionName}", businessType = BusinessType.UPDATE)
+    @PostMapping("/edit")
+    @ResponseBody
+    public AjaxResult editSave(${ClassName} ${className})
+    {
+        SysUser sysUser = getSysUser();
+        ${className}.setUpdateBy(sysUser.getUserName());
+        return toAjax(${className}Service.updateOrAdd${ClassName}(${className}));
+    }
+
+
+    /**
+     * 删除${functionName}
+     */
+    @RequiresPermissions("project:${className}:remove")
+    @Log(title = "${functionName}", businessType = BusinessType.DELETE)
+    @PostMapping( "/remove")
+    @ResponseBody
+    public AjaxResult remove(String ids)
+    {
+        return toAjax(${className}Service.delete${ClassName}ByIds(ids));
+    }
+
+}

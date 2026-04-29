@@ -1,0 +1,123 @@
+package ${packageName}.service.impl;
+
+import java.util.List;
+#if($table.tree)
+import java.util.ArrayList;
+import com.ruoyi.common.core.domain.Ztree;
+#end
+#foreach ($column in $columns)
+#if($column.javaField == 'createTime' || $column.javaField == 'updateTime')
+import com.ruoyi.common.utils.DateUtils;
+#break
+#end
+#end
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+#if($table.sub)
+import java.util.ArrayList;
+import com.ruoyi.common.utils.StringUtils;
+import org.springframework.transaction.annotation.Transactional;
+import ${packageName}.domain.${subClassName};
+#end
+import ${packageName}.mapper.${ClassName}Mapper;
+import ${packageName}.domain.${ClassName};
+import com.ruoyi.common.core.text.Convert;
+
+/**
+ * ${functionName}Service业务层处理
+ * 
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Service
+public class ${ClassName}Service
+{
+    @Autowired
+    private ${ClassName}Mapper ${className}Mapper;
+
+    /**
+     * 查询${functionName}
+     * 
+     * @param ${pkColumn.javaField} ${functionName}ID
+     * @return ${functionName}
+     */
+    public ${ClassName} select${ClassName}ById(Integer ${pkColumn.javaField})
+    {
+        return ${className}Mapper.select${ClassName}ById(${pkColumn.javaField});
+    }
+
+    /**
+     * 查询${functionName}列表
+     * 
+     * @param ${className} ${functionName}
+     * @return ${functionName}
+     */
+    public List<${ClassName}> select${ClassName}List(${ClassName} ${className})
+    {
+        List<${ClassName}> ${className}List = ${className}Mapper.select${ClassName}List(${className});
+        return ${className}List;
+    }
+
+    /**
+     * 查询${functionName}对象
+     *
+     * @param ${className} ${functionName}
+     * @return ${functionName}
+     */
+    public ${ClassName} find${ClassName}(${ClassName} ${className})
+    {
+        ${className} = ${className}Mapper.find${ClassName}(${className});
+        return ${className};
+    }
+
+    /**
+     * 修改或者添加${functionName}
+     * 
+     * @param ${className} ${functionName}
+     * @return 结果
+     */
+#if($table.sub)
+    @Transactional
+#end
+    public int updateOrAdd${ClassName}(${ClassName} ${className}) {
+        if (${className}.getId() != null){
+            #foreach ($column in $columns)
+                #if($column.javaField == 'updateTime')
+                    ${className}.setUpdateTime(DateUtils.getNowDate());
+                #end
+            #end
+            #if($table.sub)
+                    ${className}Mapper.delete${subClassName}By${subTableFkClassName}(${className}.get${pkColumn.capJavaField}())
+                ;
+                insert${subClassName}(${className});
+            #end
+            return ${className}Mapper.update${ClassName}(${className});
+        }else{
+            ${className}.setCreateTime(DateUtils.getNowDate());
+            #if($table.sub)
+                int rows = ${className}Mapper.insert${ClassName}(${className});
+                insert${subClassName}(${className});
+                return rows;
+            #else
+                return ${className}Mapper.insert${ClassName}(${className});
+            #end
+        }
+    }
+
+    /**
+     * 删除${functionName}对象
+     *
+     * @param ids 需要删除的数据ID
+     * @return 结果
+     */
+        #if($table.sub)
+        @Transactional
+        #end
+    public int delete${ClassName}ByIds(String ids)
+    {
+        #if($table.sub)
+        ${className}Mapper.delete${subClassName}By${subTableFkClassName}s(Convert.toStrArray(ids));
+        #end
+        return ${className}Mapper.delete${ClassName}ByIds(Convert.toStrArray(ids));
+    }
+}

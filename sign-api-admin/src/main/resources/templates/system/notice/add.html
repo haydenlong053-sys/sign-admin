@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<head>
+	<th:block th:include="include :: header('新增通知公告')" />
+	<th:block th:include="include :: summernote-css" />
+</head>
+<body class="white-bg">
+    <div class="wrapper wrapper-content animated fadeInRight ibox-content">
+        <form class="form-horizontal m" id="form-notice-add">
+
+			<div class="form-group">
+				<label class="col-sm-2 control-label is-required">排序(值越大越靠前)：</label>
+				<div class="col-sm-10">
+					<input id="sorting" name="sorting" class="form-control" type="number" required>
+				</div>
+			</div>
+
+
+			<div class="form-group">
+				<label class="col-sm-2 control-label is-required">语言：</label>
+				<div class="col-sm-10">
+					<select name="lang" class="form-control" type="text" required>
+						<option value="zh_CN">中文</option>
+						<option value="en_US">英文</option>
+						<option value="ko_KR">韩文</option>
+						<option value="vi_VN">越文</option>
+						<option value="ru_RU">俄文</option>
+						<option value="pt_PT">葡萄牙</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="form-group" >
+				<label class="col-sm-2 control-label">公告类型：</label>
+				<div class="col-sm-10">
+					<select name="noticeType" class="form-control m-b" id="noticeType" onchange="getTpye()" th:with="type=${@dict.getType('sys_notice_type')}">
+						<option th:each="dict : ${type}" th:text="${dict.dictLabel}" th:value="${dict.dictValue}"></option>
+					</select>
+				</div>
+			</div>
+
+			<div class="form-group"  id="userImgId">
+				<div class="layui-upload">
+					<label class="col-sm-2 control-label is-required">图片地址：</label>
+					<div style="display:inline-block; position:relative;">
+						<button type="button" class="layui-btn" id="roleImg">上传图片</button>
+						<div style="position:absolute; bottom:-60px; left:20; color:#FF5722; font-size:12px;">
+							※ 请上传347*220像素的图片
+						</div>
+					</div>
+					<!-- 添加margin-top给图片容器 -->
+					<div class="layui-upload-list" style="margin-top: 30px;">
+						<img id="demo1" style="width:300px; position:relative; left:230px;">
+					</div>
+				</div>
+				<input name="imageUrl" id="imageUrl" class="form-control" type="hidden">
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label is-required">公告标题：</label>
+				<div class="col-sm-10">
+					<input id="noticeTitle" name="noticeTitle" class="form-control" type="text" required>
+				</div>
+			</div>
+
+			<div class="form-group">	
+				<label class="col-sm-2 control-label">公告内容：</label>
+				<div class="col-sm-10">
+				    <input id="noticeContent" name="noticeContent" type="hidden">
+				    <div class="summernote"></div>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label">公告状态：</label>
+				<div class="col-sm-10">
+				    <div class="radio-box" th:each="dict : ${@dict.getType('sys_notice_status')}">
+						<input type="radio" th:id="${dict.dictCode}" name="status" th:value="${dict.dictValue}" th:checked="${dict.default}">
+						<label th:for="${dict.dictCode}" th:text="${dict.dictLabel}"></label>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+    <th:block th:include="include :: footer" />
+    <th:block th:include="include :: summernote-js" />
+    <script type="text/javascript">
+        var prefix = ctx + "system/notice";
+		var fileUri = ctx + "project/file";
+
+		//getTpye();
+		function getTpye(){
+			var type = $("#noticeType").val();
+			if(type === 1 || type === '1'){
+				$("#userImgId").show();
+			}else{
+				$("#userImgId").hide();
+			}
+		}
+
+	    $('.summernote').summernote({
+	    	placeholder: '请输入公告内容',
+			height : 192,
+			lang : 'zh-CN',
+			followingToolbar: false,
+			dialogsInBody: true,
+			callbacks: {
+                onImageUpload: function (files) {
+                    sendFile(files[0], this);
+                }
+            }
+		});
+	    
+	    // 上传文件
+	    function sendFile(file, obj) {
+	        var data = new FormData();
+	        data.append("file", file);
+	        $.ajax({
+	            type: "POST",
+	            url: ctx + "common/upload",
+	            data: data,
+	            cache: false,
+	            contentType: false,
+	            processData: false,
+	            dataType: 'json',
+	            beforeSend: function(){
+	            	if (typeof layer !== 'undefined' && layer.load) {
+	            		layer.load(2, { shade: [0.3, '#fff'] });
+	            	}
+	            },
+	            success: function(result) {
+	            	if (typeof layer !== 'undefined' && layer.closeAll) {
+	            		layer.closeAll('loading');
+	            	}
+	                if (result.code == web_status.SUCCESS) {
+	                	$(obj).summernote('editor.insertImage', result.url, result.fileName);
+	                	if ($.modal && $.modal.msgSuccess) {
+	                		$.modal.msgSuccess('上传成功');
+	                	}
+					} else {
+						$.modal.alertError(result.msg);
+					}
+	            },
+	            error: function(error) {
+	            	if (typeof layer !== 'undefined' && layer.closeAll) {
+	            		layer.closeAll('loading');
+	            	}
+	                $.modal.alertWarning("图片上传失败。");
+	            }
+	        });
+	    }
+
+
+		layui.use(['form','upload'],function(exports) {
+			var $ = layui.jquery;
+			var upload = layui.upload;
+			//上传角色图片
+			upload.render({
+				elem: '#roleImg'
+				,url: fileUri + "/updateAvatar"
+				,before: function(obj){
+					if (typeof layer !== 'undefined' && layer.load) {
+						layer.load(2, { shade: [0.3, '#fff'] });
+					}
+					//预读本地文件示例，不支持ie8
+					obj.preview(function(index, file, result){
+						$('#demo1').attr('src', result); //图片链接（base64）
+					});
+				}
+				,done: function(res){
+					if (typeof layer !== 'undefined' && layer.closeAll) {
+						layer.closeAll('loading');
+					}
+					if(res.msg != null){
+						$("#imageUrl").val(res.msg);
+						return layer.msg('上传成功');
+					}
+				}
+				,error: function(){
+					if (typeof layer !== 'undefined' && layer.closeAll) {
+						layer.closeAll('loading');
+					}
+					layer.msg('上传接口异常', { icon: 2 });
+				}
+			});
+		});
+
+		$("#form-notice-add").validate({
+			focusCleanup: true
+		});
+		
+		function submitHandler() {
+	        if ($.validate.form()) {
+	        	var sHTML = $('.summernote').summernote('code');
+				$("#noticeContent").val(sHTML);
+				$.operate.save(prefix + "/add", $('#form-notice-add').serialize());
+	        }
+	    }
+	</script>
+</body>
+</html>
