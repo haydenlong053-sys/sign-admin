@@ -16,7 +16,10 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -52,6 +55,8 @@ public class BscWithdrawalLogServiceImpl {
     private BscWithdrawalSignMapper bscWithdrawalSignMapper;
     @Resource
     private AccessControlServiceImpl accessControlService;
+    @Resource
+    WithdrawSignService withdrawSignService;
 
 
     public List<BscWithdrawalLog> selectBscWithdrawalLogList(BscWithdrawalLog query) {
@@ -62,8 +67,8 @@ public class BscWithdrawalLogServiceImpl {
         return bscWithdrawalLogMapper.selectBscWithdrawalLogById(id);
     }
 
-   
-    public AjaxResult submitSign(BscWithdrawalSignSubmit withdrawalAuditReq) {
+
+    public AjaxResult submitSign(BscWithdrawalSignSubmit withdrawalAuditReq) throws Exception {
         // 1. 参数校验
         if (withdrawalAuditReq == null || withdrawalAuditReq.getWithdrawalLogId() == null) {
             return AjaxResult.error("参数异常");
@@ -130,13 +135,13 @@ public class BscWithdrawalLogServiceImpl {
         return AjaxResult.error("审核状态异常");
     }
 
-   
+
     public WithdrawRequest buildWithdrawRequest(BscWithdrawalLog bscWithdrawalLog) {
         BigInteger orderId = BigInteger.valueOf(Long.parseLong(bscWithdrawalLog.getOrderNumber()));
         BigInteger amount = convertAmount(bscWithdrawalLog.getAmount());
         BigInteger redemption = BigInteger.valueOf(bscWithdrawalLog.getRedemption().longValue());
         BigInteger deadline = bscWithdrawalLog.getDeadline();
-        BigInteger bizIdValue = BigInteger.valueOf(1);
+        BigInteger bizIdValue = BigInteger.valueOf(bscWithdrawalLog.getCoinId());
         return new WithdrawRequest(orderId, bscWithdrawalLog.getToAddress(), amount,
                 redemption, deadline, bizIdValue);
     }
@@ -147,7 +152,7 @@ public class BscWithdrawalLogServiceImpl {
     public String signWithdrawRequest(WithdrawRequest req) throws Exception {
         log.info("提现请求1: orderId={}, user={}, amount={}, redemption={}, deadline={},  bizId={}",
                 req.getOrderId(), req.getUser(), req.getAmount(), req.getRedemption(),
-                req.getDeadline(),  req.getBizId());
+                req.getDeadline(), req.getBizId());
         return accessControlService.hashWithdrawRequest(req, "0x17f4302FBE11dfc66b9eBE45D4b8919f042F7909");
     }
 
@@ -163,6 +168,57 @@ public class BscWithdrawalLogServiceImpl {
         return dbAmount.multiply(base).toBigInteger();
     }
 
+    /**
+     * 构建 MetaMask eth_signTypedData_v4 需要的 EIP-712 typedData
+     */
+    public Map<String, Object> buildWithdrawTypedData(WithdrawRequest req) {
+        Map<String, Object> typedData = new LinkedHashMap<>();
 
+        Map<String, Object> types = new LinkedHashMap<>();
 
+        List<Map<String, String>> domainTypes = new ArrayList<>();
+        domainTypes.add(typeField("name", "string"));
+        domainTypes.add(typeField("version", "string"));
+        domainTypes.add(typeField("chainId", "uint256"));
+        domainTypes.add(typeField("verifyingContract", "address"));
+
+        List<Map<String, String>> withdrawTypes = new ArrayList<>();
+        withdrawTypes.add(typeField("orderId", "uint256"));
+        withdrawTypes.add(typeField("user", "address"));
+        withdrawTypes.add(typeField("amount", "uint256"));
+        withdrawTypes.add(typeField("redemption", "uint8"));
+        withdrawTypes.add(typeField("deadline", "uint256"));
+        withdrawTypes.add(typeField("bizId", "uint256"));
+
+        types.put("EIP712Domain", domainTypes);
+        types.put("WithdrawRequest", withdrawTypes);
+
+        Map<String, Object> domain = new LinkedHashMap<>();
+        domain.put("name", "ExchangeGradeWithdraw");
+        domain.put("version", "1");
+        domain.put("chainId", 56);
+        domain.put("verifyingContract", "0x17f4302FBE11dfc66b9eBE45D4b8919f042F7909");
+
+        Map<String, Object> message = new LinkedHashMap<>();
+        message.put("orderId", req.getOrderId().toString());
+        message.put("user", req.getUser());
+        message.put("amount", req.getAmount().toString());
+        message.put("redemption", req.getRedemption().intValue());
+        message.put("deadline", req.getDeadline().toString());
+        message.put("bizId", req.getBizId().toString());
+
+        typedData.put("types", types);
+        typedData.put("primaryType", "WithdrawRequest");
+        typedData.put("domain", domain);
+        typedData.put("message", message);
+
+        return typedData;
+    }
+
+    private Map<String, String> typeField(String name, String type) {
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("name", name);
+        map.put("type", type);
+        return map;
+    }
 }

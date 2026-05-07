@@ -142,7 +142,6 @@
         return v.length > 18 ? v.substring(0, 10) + '…' + v.substring(v.length - 6) : v;
     }
 
-    /** 来源 1:链桥 2:IM 3:链桥老系统，不同来源不同颜色 */
     function fmtOriginType(v) {
         if (v == 1) {
             return '<span class="text-primary" style="font-weight:600;">链桥</span>';
@@ -156,19 +155,38 @@
         return v != null && v !== '' ? v : '-';
     }
 
-    /** 从 AjaxResult 取 EIP-712 digest：优先 signPayload，其次 data；兼容误用 success(hex) 时 digest 落在 msg */
-    function pickSignPayload(res) {
-        if (res.signPayload != null && String(res.signPayload) !== '') {
-            return String(res.signPayload);
-        }
+    /**
+     * 取后端返回的 EIP-712 typedData
+     * 支持 res.data / res.signPayload / res.msg
+     */
+    function pickTypedData(res) {
+        var typedData = null;
+
         if (res.data != null && String(res.data) !== '') {
-            return String(res.data);
+            typedData = res.data;
+        } else if (res.signPayload != null && String(res.signPayload) !== '') {
+            typedData = res.signPayload;
+        } else if (res.msg != null && String(res.msg) !== '') {
+            typedData = res.msg;
         }
-        var m = res.msg != null ? String(res.msg).trim() : '';
-        if (/^0x[a-fA-F0-9]{64}$/.test(m)) {
-            return m;
+
+        if (!typedData) {
+            return null;
         }
-        return '';
+
+        if (typeof typedData === 'string') {
+            try {
+                typedData = JSON.parse(typedData);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        if (!typedData.types || !typedData.domain || !typedData.message || !typedData.primaryType) {
+            return null;
+        }
+
+        return typedData;
     }
 
     function getSingleSelectedRow() {
@@ -180,7 +198,7 @@
     }
 
     /**
-     * 签名审核：请求后端 signPayload → 唤起小狐狸对内容签名 → 将签名与地址提交后端
+     * 签名审核：请求后端 typedData → MetaMask EIP-712签名 → 提交后端
      */
     function signAudit() {
         var row = getSingleSelectedRow();
@@ -188,35 +206,37 @@
             $.modal.msgWarning("请先选中一条数据（仅能选一条）");
             return;
         }
-        if (typeof ethers === 'undefined' || !ethers.BrowserProvider) {
-            $.modal.msgError("页面未加载 ethers.js，请检查静态资源 /js/ethers.umd.min.js");
-            return;
-        }
+
         if (!window.ethereum) {
-            $.modal.msgError("未检测到钱包插件（window.ethereum），请安装并解锁 MetaMask（小狐狸）");
+            $.modal.msgError("未检测到钱包插件，请安装并解锁 MetaMask（小狐狸）");
             return;
         }
 
         var loadIdx = layer.load(2, {shade: [0.2, '#000']});
+
         $.ajax({
             url: prefix + "/signParams/" + row.id,
             type: "post",
             dataType: "json",
             success: function (res) {
                 layer.close(loadIdx);
+
                 if (res.code !== 0) {
                     $.modal.msgError(res.msg || '获取签名参数失败');
                     return;
                 }
-                var signPayload = pickSignPayload(res);
-                if (!signPayload) {
-                    $.modal.msgError('未获取到待签名内容 signPayload，请刷新页面后重试');
+
+                var typedData = pickTypedData(res);
+                if (!typedData) {
+                    $.modal.msgError('后端返回的不是 EIP-712 typedData，请检查 /signParams 接口');
                     return;
                 }
-                var recordId = res.id != null ? res.id : row.id;
-                $("#signPayloadArea").val(signPayload);
 
-                doMetaMaskSignAndSubmit(recordId, signPayload);
+                var recordId = res.id != null ? res.id : row.id;
+
+                $("#signPayloadArea").val(JSON.stringify(typedData, null, 2));
+
+                doMetaMaskSignAndSubmit(recordId, typedData);
             },
             error: function () {
                 layer.close(loadIdx);
@@ -225,42 +245,55 @@
         });
     }
 
-    function doMetaMaskSignAndSubmit(recordId, signPayload) {
+    function doMetaMaskSignAndSubmit(recordId, typedData) {
         var waitIdx = layer.msg('请在 MetaMask 中确认签名…', {icon: 16, shade: 0.3, time: 0});
+
         var p = Promise.resolve()
             .then(function () {
                 return window.ethereum.request({method: 'eth_requestAccounts'});
             })
-            .then(function () {
-                var provider = new ethers.BrowserProvider(window.ethereum);
-                return provider.getSigner();
-            })
-            .then(function (signer) {
-                return signer.getAddress().then(function (addr) {
-                    return signer.signMessage(signPayload).then(function (signature) {
-                        return {signature: signature, signerAddress: addr};
-                    });
+            .then(function (accounts) {
+                if (!accounts || accounts.length === 0) {
+                    throw new Error("未获取到 MetaMask 账户");
+                }
+
+                var signerAddress = accounts[0];
+
+                return window.ethereum.request({
+                    method: "eth_signTypedData_v4",
+                    params: [
+                        signerAddress,
+                        JSON.stringify(typedData)
+                    ]
+                }).then(function (signature) {
+                    return {
+                        signature: signature,
+                        signerAddress: signerAddress
+                    };
                 });
             });
 
         p.then(function (out) {
             layer.close(waitIdx);
+
             $("#signatureInput").val(out.signature);
             $("#signerAddressInput").val(out.signerAddress);
 
             var submitLoad = layer.load(2, {shade: [0.2, '#000']});
+
             $.ajax({
                 url: prefix + "/submitSign",
                 type: "post",
                 contentType: "application/json;charset=UTF-8",
                 data: JSON.stringify({
-                    id: recordId,
+                    withdrawalLogId: recordId,
                     signature: out.signature,
                     signerAddress: out.signerAddress
                 }),
                 dataType: "json",
                 success: function (subRes) {
                     layer.close(submitLoad);
+
                     if (subRes.code === 0) {
                         $.modal.msgSuccess(subRes.msg || "提交成功");
                         $.table.refresh();
@@ -275,8 +308,17 @@
             });
         }).catch(function (e) {
             layer.close(waitIdx);
+
             var msg = (e && e.message) ? e.message : String(e);
-            if (msg && (msg.indexOf('reject') >= 0 || msg.indexOf('denied') >= 0 || msg.indexOf('User denied') >= 0)) {
+
+            if (
+                msg &&
+                (
+                    msg.indexOf('reject') >= 0 ||
+                    msg.indexOf('denied') >= 0 ||
+                    msg.indexOf('User denied') >= 0
+                )
+            ) {
                 $.modal.msgWarning("已取消钱包签名");
             } else {
                 $.modal.msgError("钱包签名失败：" + msg);
