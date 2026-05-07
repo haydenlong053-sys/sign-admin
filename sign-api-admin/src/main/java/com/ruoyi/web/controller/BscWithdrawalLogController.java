@@ -10,6 +10,7 @@ import com.ruoyi.common.utils.uuid.IdUtils;
 import com.ruoyi.system.domain.BscWithdrawalLog;
 import com.ruoyi.system.domain.req.BscWithdrawalSignSubmit;
 import com.ruoyi.system.service.BscWithdrawalLogService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -74,6 +75,12 @@ public class BscWithdrawalLogController extends BaseController {
     @PostMapping("/submitSign")
     @ResponseBody
     public AjaxResult submitSign(@RequestBody BscWithdrawalSignSubmit withdrawalAuditReq) {
+        if(StringUtils.isBlank(withdrawalAuditReq.getSignerAddress())){
+            return error("签名钱包地址为空");
+        }
+        if(withdrawalAuditReq.getSignerAddress().toLowerCase().equals("0x71c7fcc1206f7df0992ec9436cf5128215a1c69e")){
+            return error("请用大额审核 0x71c7fcc1206f7df0992ec9436cf5128215a1c69e 审核");
+        }
        return bscWithdrawalLogService.submitSign(withdrawalAuditReq);
     }
 }

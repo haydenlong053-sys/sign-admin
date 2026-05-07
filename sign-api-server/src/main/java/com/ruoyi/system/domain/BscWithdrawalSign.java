@@ -24,19 +24,6 @@ public class BscWithdrawalSign  extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
 
-
-    private Integer id;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createTime;
-
- 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime updateTime;
-
-    private String createBy;
-    private String updateBy;
-
     //"标记删除，0 / 1")
     private Integer flag;
 
@@ -60,9 +47,6 @@ public class BscWithdrawalSign  extends BaseEntity {
 
     //"签名服务器标识")
     private String signServer;
-
-    //"备注")
-    private String remark;
 
     //"签名时间")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

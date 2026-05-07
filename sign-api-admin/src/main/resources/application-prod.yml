@@ -5,9 +5,10 @@ spring:
     druid:
       # 主库数据源
       master:
-        url: jdbc:mysql://localhost:3306/ry?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-        username: root
-        password: password
+        url: jdbc:mysql://web4x-instance-1.cjo2k0gs8tmr.ap-east-1.rds.amazonaws.com:3306/ink_mint?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: admin
+        password: 2LFzSNvVEdYqYnM26621
+        driver-class-name: com.mysql.cj.jdbc.Driver
       # 从库数据源
       slave:
         # 从数据源开关/默认关闭
