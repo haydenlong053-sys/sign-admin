@@ -50,7 +50,7 @@ public class BscWithdrawalLog extends BaseEntity {
     private Integer signFinished;
 
     /** 系统内部订单号 */
-    private Long orderNumber;
+    private String orderNumber;
 
     /** 实际到账金额 */
     private BigDecimal amount;

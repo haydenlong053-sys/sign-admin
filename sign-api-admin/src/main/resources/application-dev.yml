@@ -58,3 +58,14 @@ spring:
         wall:
           config:
             multi-statement-allow: true
+com.app:
+  #BNB节点服务器 和  合约地址
+  bscChainWsUrl: 'https://bsc-dataseed.bnbchain.org'
+withdraw:
+  audit:
+    step: 4
+    server-name: audit-server-4
+contract:
+  exchangeGradeWithdraw:
+    contract-withdraw-u: '0x17f4302FBE11dfc66b9eBE45D4b8919f042F7909'
+    contract-withdraw-oidc: '0xEa3f52E0CDedD9B55c6Ea38c98241327EE3665d6'

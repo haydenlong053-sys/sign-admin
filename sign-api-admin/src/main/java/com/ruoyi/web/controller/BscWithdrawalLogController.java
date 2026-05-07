@@ -1,26 +1,19 @@
 package com.ruoyi.web.controller;
 
-import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.common.utils.uuid.IdUtils;
 import com.ruoyi.system.domain.BscWithdrawalLog;
 import com.ruoyi.system.domain.WithdrawRequest;
 import com.ruoyi.system.domain.req.BscWithdrawalSignSubmit;
-import com.ruoyi.system.service.BscWithdrawalLogService;
+import com.ruoyi.system.service.BscWithdrawalLogServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -34,7 +27,7 @@ public class BscWithdrawalLogController extends BaseController {
     private final String prefix = "project/bscWithdrawalLog";
 
     @Autowired
-    private BscWithdrawalLogService bscWithdrawalLogService;
+    private BscWithdrawalLogServiceImpl bscWithdrawalLogService;
 
     @RequiresPermissions("project:bscWithdrawalLog:view")
     @GetMapping()
@@ -78,10 +71,10 @@ public class BscWithdrawalLogController extends BaseController {
     @PostMapping("/submitSign")
     @ResponseBody
     public AjaxResult submitSign(@RequestBody BscWithdrawalSignSubmit withdrawalAuditReq) {
-        if(StringUtils.isBlank(withdrawalAuditReq.getSignerAddress())){
+        if (StringUtils.isBlank(withdrawalAuditReq.getSignerAddress())) {
             return error("签名钱包地址为空");
         }
-        if(withdrawalAuditReq.getSignerAddress().toLowerCase().equals("0x71c7fcc1206f7df0992ec9436cf5128215a1c69e")){
+        if (withdrawalAuditReq.getSignerAddress().equalsIgnoreCase("0x71c7fcc1206f7df0992ec9436cf5128215a1c69e")) {
             return error("请用大额审核 0x71c7fcc1206f7df0992ec9436cf5128215a1c69e 审核");
         }
        return bscWithdrawalLogService.submitSign(withdrawalAuditReq);

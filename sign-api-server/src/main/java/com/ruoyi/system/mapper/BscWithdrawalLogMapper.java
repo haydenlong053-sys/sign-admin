@@ -15,4 +15,8 @@ public interface BscWithdrawalLogMapper {
     List<BscWithdrawalLog> selectBscWithdrawalLogList(BscWithdrawalLog query);
 
     BscWithdrawalLog selectBscWithdrawalLogById(Long id);
+
+    BscWithdrawalLog getById(Long id);
+
+    int  updateById(BscWithdrawalLog withdrawalLog);
 }

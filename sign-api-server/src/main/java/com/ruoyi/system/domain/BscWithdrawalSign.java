@@ -2,11 +2,10 @@ package com.ruoyi.system.domain;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.ruoyi.common.core.domain.BaseEntity;
-
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 
@@ -20,9 +19,22 @@ import java.time.LocalDateTime;
  */
 @Data
 @Accessors(chain = true)
-public class BscWithdrawalSign  extends BaseEntity {
+public class BscWithdrawalSign implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    //"ID")
+    private Integer id;
+
+    //"创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createTime;
+
+    //"更新时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updateTime;
+
+    private String createBy;
+    private String updateBy;
 
     //"标记删除，0 / 1")
     private Integer flag;
@@ -48,12 +60,15 @@ public class BscWithdrawalSign  extends BaseEntity {
     //"签名服务器标识")
     private String signServer;
 
+    //"备注")
+    private String remark;
+
     //"签名时间")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime signTime;
 
     //"合约订单号")
-    private Integer orderId;
+    private String orderId;
 
     //"签名过期时间戳")
     private BigInteger deadline;

@@ -68,4 +68,42 @@
           and is_large_amount = 1
           and sign_progress_four = 0
     </select>
+
+    <select id="getById" parameterType="long" resultMap="BscWithdrawalLogResult">
+        <include refid="selectBscWithdrawalLogVo"/>
+        where id = #{withdrawalLogId}
+        and flag = 0
+        and is_large_amount = 1
+        and sign_progress_four = 0
+    </select>
+
+    <update id="updateById" parameterType="com.ruoyi.system.domain.BscWithdrawalLog">
+        update bsc_withdrawal_log
+        <set>
+            <if test="flag != null">flag = #{flag},</if>
+            <if test="originType != null">origin_type = #{originType},</if>
+            <if test="userId != null and userId != ''">user_id = #{userId},</if>
+            <if test="coinId != null">coin_id = #{coinId},</if>
+            <if test="billingTime != null">billing_time = #{billingTime},</if>
+            <if test="fromAddress != null and fromAddress != ''">from_address = #{fromAddress},</if>
+            <if test="toAddress != null and toAddress != ''">to_address = #{toAddress},</if>
+            <if test="hash != null and hash != ''">hash = #{hash},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="signFinished != null">sign_finished = #{signFinished},</if>
+            <if test="orderNumber != null and orderNumber != ''">order_number = #{orderNumber},</if>
+            <if test="amount != null">amount = #{amount},</if>
+            <if test="redemption != null">redemption = #{redemption},</if>
+            <if test="largeAmountPassed != null">large_amount_passed = #{largeAmountPassed},</if>
+            <if test="isLargeAmount != null">is_large_amount = #{isLargeAmount},</if>
+            <if test="deadline != null">deadline = #{deadline},</if>
+            <if test="signProgressOne != null">sign_progress_one = #{signProgressOne},</if>
+            <if test="signProgressTwo != null">sign_progress_two = #{signProgressTwo},</if>
+            <if test="signProgressThree != null">sign_progress_three = #{signProgressThree},</if>
+            <if test="signProgressFour != null">sign_progress_four = #{signProgressFour},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        where id = #{id}
+    </update>
+
 </mapper>
