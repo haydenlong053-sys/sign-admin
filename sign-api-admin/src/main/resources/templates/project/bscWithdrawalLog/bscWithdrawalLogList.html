@@ -18,6 +18,23 @@
                             <label>订单号：</label>
                             <input type="text" name="orderNumber" placeholder="可选"/>
                         </li>
+                        <li>
+                            <label>币种：</label>
+                            <select name="coinId" class="form-control">
+                                <option value="">全部</option>
+                                <option value="1">WX</option>
+                                <option value="2">WEBX</option>
+                            </select>
+                        </li>
+                        <li>
+                            <label>来源：</label>
+                            <select name="originType" class="form-control">
+                                <option value="">全部</option>
+                                <option value="1">链桥</option>
+                                <option value="2">IM</option>
+                                <option value="3">链桥老系统</option>
+                            </select>
+                        </li>
                         <li class="select-time">
                             <label>创建时间：</label>
                             <input type="text" class="time-input" id="startTime" autocomplete="off" placeholder="开始"
@@ -86,9 +103,17 @@
                 {field: 'userId', title: '用户ID'},
                 {
                     field: 'coinId', title: '币种', formatter: function (v) {
-                        if (v === 1) return 'WX';
-                        if (v === 2) return 'WEBX';
-                        return v;
+                        if (v == 1) return 'WX';
+                        if (v == 2) return 'WEBX';
+                        return v != null && v !== '' ? v : '-';
+                    }
+                },
+                {
+                    field: 'originType',
+                    title: '来源',
+                    align: 'center',
+                    formatter: function (v) {
+                        return fmtOriginType(v);
                     }
                 },
                 {field: 'amount', title: '金额'},
@@ -115,6 +140,35 @@
     function fmtAddr(v) {
         if (!v) return '';
         return v.length > 18 ? v.substring(0, 10) + '…' + v.substring(v.length - 6) : v;
+    }
+
+    /** 来源 1:链桥 2:IM 3:链桥老系统，不同来源不同颜色 */
+    function fmtOriginType(v) {
+        if (v == 1) {
+            return '<span class="text-primary" style="font-weight:600;">链桥</span>';
+        }
+        if (v == 2) {
+            return '<span class="text-success" style="font-weight:600;">IM</span>';
+        }
+        if (v == 3) {
+            return '<span class="text-warning" style="font-weight:600;">链桥老系统</span>';
+        }
+        return v != null && v !== '' ? v : '-';
+    }
+
+    /** 从 AjaxResult 取 EIP-712 digest：优先 signPayload，其次 data；兼容误用 success(hex) 时 digest 落在 msg */
+    function pickSignPayload(res) {
+        if (res.signPayload != null && String(res.signPayload) !== '') {
+            return String(res.signPayload);
+        }
+        if (res.data != null && String(res.data) !== '') {
+            return String(res.data);
+        }
+        var m = res.msg != null ? String(res.msg).trim() : '';
+        if (/^0x[a-fA-F0-9]{64}$/.test(m)) {
+            return m;
+        }
+        return '';
     }
 
     function getSingleSelectedRow() {
@@ -154,7 +208,11 @@
                     $.modal.msgError(res.msg || '获取签名参数失败');
                     return;
                 }
-                var signPayload = res.signPayload != null ? String(res.signPayload) : '';
+                var signPayload = pickSignPayload(res);
+                if (!signPayload) {
+                    $.modal.msgError('未获取到待签名内容 signPayload，请刷新页面后重试');
+                    return;
+                }
                 var recordId = res.id != null ? res.id : row.id;
                 $("#signPayloadArea").val(signPayload);
 

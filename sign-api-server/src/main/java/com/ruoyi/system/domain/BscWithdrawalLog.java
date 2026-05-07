@@ -23,7 +23,7 @@ public class BscWithdrawalLog extends BaseEntity {
     /** 标记删除，0:未删除 / 1:已删除 */
     private Integer flag;
 
-    /** 来源 1:链桥 2:IM */
+    /** 来源 1:链桥 2:IM 3:链桥老系统 */
     private Integer originType;
 
     /** 来源方系统的用户ID */

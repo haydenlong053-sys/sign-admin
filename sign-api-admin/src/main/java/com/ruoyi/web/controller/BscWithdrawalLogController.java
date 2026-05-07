@@ -60,7 +60,10 @@ public class BscWithdrawalLogController extends BaseController {
         }
         WithdrawRequest withdrawRequest = bscWithdrawalLogService.buildWithdrawRequest(row);
         String digestHex = bscWithdrawalLogService.signWithdrawRequest(withdrawRequest);
-        return AjaxResult.success("成功",digestHex);
+        // 勿使用 success(digestHex)：String 会命中 success(String msg)，digest 会进 msg；前端读的是 signPayload
+        return AjaxResult.success("操作成功")
+                .put("signPayload", digestHex)
+                .put("id", row.getId());
     }
 
     /**

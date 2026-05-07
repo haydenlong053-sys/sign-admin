@@ -54,6 +54,12 @@
             <if test="orderNumber != null">
                 and order_number = #{orderNumber}
             </if>
+            <if test="coinId != null">
+                and coin_id = #{coinId}
+            </if>
+            <if test="originType != null">
+                and origin_type = #{originType}
+            </if>
             <if test="params.beginTime != null and params.beginTime != '' and params.endTime != null and params.endTime != ''">
                 and create_time between #{params.beginTime} and #{params.endTime}
             </if>
