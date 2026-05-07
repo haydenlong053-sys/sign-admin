@@ -1,6 +1,5 @@
 package com.ruoyi.system.domain.req;
 
-import jnr.ffi.Struct;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

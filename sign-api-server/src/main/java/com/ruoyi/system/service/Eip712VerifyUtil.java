@@ -78,7 +78,7 @@ public class Eip712VerifyUtil {
                                  BigInteger chainId) {
         log.info("开始验签，verifyingContract={}, expectedSignerAddress={}, chainId={}",
                 verifyingContract, expectedSignerAddress, chainId);
-        log.debug("提现请求: orderId={}, user={}, amount={}, redemption={}, deadline={},  bizId={}",
+        log.info("提现请求: orderId={}, user={}, amount={}, redemption={}, deadline={},  bizId={}",
                 req.getOrderId(), req.getUser(), req.getAmount(), req.getRedemption(),
                 req.getDeadline(),  req.getBizId());
 

@@ -1,7 +1,6 @@
 package com.ruoyi.system.service;
 
 import com.alibaba.fastjson.JSONObject;
-
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.BaseUtil;
 import com.ruoyi.system.domain.BscWithdrawalLog;
@@ -13,7 +12,6 @@ import com.ruoyi.system.mapper.BscWithdrawalSignMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.web3j.utils.Numeric;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
@@ -31,7 +29,7 @@ import java.util.List;
  */
 @Slf4j
 @Service
-public class BscWithdrawalLogServiceImpl  {
+public class BscWithdrawalLogServiceImpl {
 
 
     @Value("${withdraw.audit.server-name}")
@@ -52,6 +50,8 @@ public class BscWithdrawalLogServiceImpl  {
     private BscWithdrawalLogMapper bscWithdrawalLogMapper;
     @Resource
     private BscWithdrawalSignMapper bscWithdrawalSignMapper;
+    @Resource
+    private AccessControlServiceImpl accessControlService;
 
 
     public List<BscWithdrawalLog> selectBscWithdrawalLogList(BscWithdrawalLog query) {
@@ -103,13 +103,22 @@ public class BscWithdrawalLogServiceImpl  {
                     log.info("签名记录已存在，withdrawalLogId={}", withdrawalLog.getId());
                     return AjaxResult.success("签名任务已受理");
                 }
+                WithdrawRequest req = buildWithdrawRequest(withdrawalLog);
+                //直接执行签名的校验
+                boolean verify = Eip712VerifyUtil.verify("0x17f4302FBE11dfc66b9eBE45D4b8919f042F7909",
+                        withdrawalAuditReq.getSignerAddress(),
+                        withdrawalAuditReq.getSignature(),
+                        req);
+                if (!verify) {
+                    return AjaxResult.success("验签失败");
+                }
                 withdrawalLog.setLargeAmountPassed(1);
                 bscWithdrawalLogMapper.updateById(withdrawalLog);
                 String value = JSONObject.toJSONString(withdrawalAuditReq);
                 BscWithdrawalSign sign = JSONObject.parseObject(value, BscWithdrawalSign.class);
                 bscWithdrawalSignMapper.insert(sign);
                 // 12. 执行签名
-                bscWithdrawalSignService.doApproveAndSign(sign, withdrawalLog,contractAddress);
+                bscWithdrawalSignService.doApproveAndSign(sign, withdrawalLog, contractAddress);
                 log.info("审核通过，签名任务执行成功，orderNo={}", orderNo);
                 return AjaxResult.success("审核通过，签名成功");
 
@@ -136,17 +145,11 @@ public class BscWithdrawalLogServiceImpl  {
      * 对提现请求进行 EIP-712 签名
      */
     public String signWithdrawRequest(WithdrawRequest req) throws Exception {
-        // 1. 构建 EIP-712 domainSeparator
-        byte[] domainSeparator = Eip712Helper.buildDomainSeparator(BigInteger.valueOf(56), "0x17f4302FBE11dfc66b9eBE45D4b8919f042F7909");
-
-        // 2. 构建 WithdrawRequest structHash
-        byte[] structHash = Eip712Helper.buildWithdrawStructHash(req);
-
-        // 3. 构建最终 EIP-712 digest
-        byte[] eip712Digest = Eip712Helper.buildEip712Digest(domainSeparator, structHash);
-        return Numeric.toHexString(eip712Digest);
+        log.info("提现请求1: orderId={}, user={}, amount={}, redemption={}, deadline={},  bizId={}",
+                req.getOrderId(), req.getUser(), req.getAmount(), req.getRedemption(),
+                req.getDeadline(),  req.getBizId());
+        return accessControlService.hashWithdrawRequest(req, "0x17f4302FBE11dfc66b9eBE45D4b8919f042F7909");
     }
-
 
 
     /**
