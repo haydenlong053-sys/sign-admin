@@ -8,6 +8,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.uuid.IdUtils;
 import com.ruoyi.system.domain.BscWithdrawalLog;
+import com.ruoyi.system.domain.WithdrawRequest;
 import com.ruoyi.system.domain.req.BscWithdrawalSignSubmit;
 import com.ruoyi.system.service.BscWithdrawalLogService;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -58,12 +59,14 @@ public class BscWithdrawalLogController extends BaseController {
     @RequiresPermissions("project:bscWithdrawalLog:sign")
     @PostMapping("/signParams/{id}")
     @ResponseBody
-    public AjaxResult signParams(@PathVariable("id") Long id) {
+    public AjaxResult signParams(@PathVariable("id") Long id) throws Exception {
         BscWithdrawalLog row = bscWithdrawalLogService.selectBscWithdrawalLogById(id);
         if (row == null) {
             return AjaxResult.error("记录不存在或不符合大额四号待签条件");
         }
-        return AjaxResult.success(bscWithdrawalLogService.buildWithdrawRequest(row));
+        WithdrawRequest withdrawRequest = bscWithdrawalLogService.buildWithdrawRequest(row);
+        String digestHex = bscWithdrawalLogService.signWithdrawRequest(withdrawRequest);
+        return AjaxResult.success("成功",digestHex);
     }
 
     /**

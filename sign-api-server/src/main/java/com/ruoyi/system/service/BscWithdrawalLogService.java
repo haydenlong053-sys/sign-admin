@@ -10,6 +10,7 @@ import com.ruoyi.system.mapper.BscWithdrawalLogMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.web3j.utils.Numeric;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -63,6 +64,21 @@ public class BscWithdrawalLogService {
         BigInteger bizIdValue = BigInteger.valueOf(1);
         return new WithdrawRequest(orderId, bscWithdrawalLog.getToAddress(), amount,
                 redemption, deadline, bizIdValue);
+    }
+
+    /**
+     * 对提现请求进行 EIP-712 签名
+     */
+    public String signWithdrawRequest(WithdrawRequest req) throws Exception {
+        // 1. 构建 EIP-712 domainSeparator
+        byte[] domainSeparator = Eip712Helper.buildDomainSeparator(BigInteger.valueOf(56), "0x17f4302FBE11dfc66b9eBE45D4b8919f042F7909");
+
+        // 2. 构建 WithdrawRequest structHash
+        byte[] structHash = Eip712Helper.buildWithdrawStructHash(req);
+
+        // 3. 构建最终 EIP-712 digest
+        byte[] eip712Digest = Eip712Helper.buildEip712Digest(domainSeparator, structHash);
+        return Numeric.toHexString(eip712Digest);
     }
 
     /**
