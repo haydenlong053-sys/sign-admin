@@ -26,11 +26,6 @@ public class BscWithdrawalSignServiceImpl {
      */
     private static final int SIGN_SUCCESS = 2;
 
-    /**
-     * 签名失败
-     */
-    private static final int SIGN_FAILED = 3;
-
     // ==================== 依赖注入 ====================
 
 
@@ -47,11 +42,7 @@ public class BscWithdrawalSignServiceImpl {
     @Value("${withdraw.audit.step}")
     private Integer auditStep;
 
-    /**
-     * 当前签名服务器名称
-     */
-    @Value("${withdraw.audit.server-name}")
-    private String auditServerName;
+
 
     /**
      * 代币精度，仅 amountIsRaw=false 时使用
@@ -65,56 +56,26 @@ public class BscWithdrawalSignServiceImpl {
 
     // ==================== 公开方法 ====================
 
-
-    /**
-     * 更新签名失败
-     * 失败原因只保存摘要，避免字段过长。
-     *
-     * @param signId 签名记录ID
-     * @param logId  提现记录ID
-     * @param reason 失败原因
-     */
-    public void markFail(Integer signId, Long logId, String reason) {
-        if (signId == null || logId == null) {
-            return;
-        }
-        BscWithdrawalSign update = new BscWithdrawalSign();
-        update.setId(signId);
-        update.setSignStatus(3);
-        update.setUpdateTime(LocalDateTime.now());
-        update.setFailReason(safeReason(reason));
-        bscWithdrawalSignMapper.updateById(update);
-
-        // 更新提现主表签名进度状态
-        BscWithdrawalLog bscWithdrawalLog = new BscWithdrawalLog();
-        bscWithdrawalLog.setId(logId);
-        updateSignProgress(bscWithdrawalLog, auditStep, SIGN_FAILED);
-        bscWithdrawalLogMapper.updateById(bscWithdrawalLog);
-
-        log.error("签名失败，signId={}, reason={}", signId, reason);
-    }
-
     /**
      * 更新签名成功
      *
      * @param sign      签名记录
      * @param withdrawalLog     提现记录
-     * @param userNonce 用户nonce
-     * @param orderNo   订单号
      */
-    public void markSuccess(BscWithdrawalSign sign, BscWithdrawalLog withdrawalLog, BigInteger userNonce, String orderNo) {
+    public void markSuccess(BscWithdrawalSign sign, BscWithdrawalLog withdrawalLog) {
         BscWithdrawalSign update = new BscWithdrawalSign();
         update.setId(sign.getId());
         update.setSignStatus(2);
         update.setUpdateTime(LocalDateTime.now());
-        update.setUserNonce(userNonce);
         bscWithdrawalSignMapper.updateById(update);
 
         // 更新提现主表签名进度状态
         BscWithdrawalLog bscWithdrawalLog = new BscWithdrawalLog();
         bscWithdrawalLog.setId(withdrawalLog.getId());
-        updateSignProgress(bscWithdrawalLog, auditStep, SIGN_SUCCESS);
+        bscWithdrawalLog.setLargeAmountPassed(1);
+        updateSignProgress(bscWithdrawalLog, auditStep);
         bscWithdrawalLogMapper.updateById(bscWithdrawalLog);
+
 
         log.info("签名成功，signId={}, signerAddress={}", sign.getId(), sign.getSignerAddress());
     }
@@ -133,7 +94,7 @@ public class BscWithdrawalSignServiceImpl {
                 throw new ServiceException("当前签名地址不是链上授权signer，signerAddress=" + sign.getSignerAddress());
             }
             // 7. 更新签名记录为成功
-            markSuccess(sign, bscWithdrawalLog, null, bscWithdrawalLog.getOrderNumber());
+            markSuccess(sign, bscWithdrawalLog);
             // 8. 统计当前订单已成功签名数量
             long signedCount = bscWithdrawalSignMapper.countByWithdrawLogIdAndDigest(
                     bscWithdrawalLog.getId(),
@@ -167,19 +128,19 @@ public class BscWithdrawalSignServiceImpl {
     /**
      * 更新签名进度状态
      */
-    private void updateSignProgress(BscWithdrawalLog log, int step, int status) {
+    private void updateSignProgress(BscWithdrawalLog log, int step) {
         switch (step) {
             case 1:
-                log.setSignProgressOne(status);
+                log.setSignProgressOne(BscWithdrawalSignServiceImpl.SIGN_SUCCESS);
                 break;
             case 2:
-                log.setSignProgressTwo(status);
+                log.setSignProgressTwo(BscWithdrawalSignServiceImpl.SIGN_SUCCESS);
                 break;
             case 3:
-                log.setSignProgressThree(status);
+                log.setSignProgressThree(BscWithdrawalSignServiceImpl.SIGN_SUCCESS);
                 break;
             case 4:
-                log.setSignProgressFour(status);
+                log.setSignProgressFour(BscWithdrawalSignServiceImpl.SIGN_SUCCESS);
                 break;
             default:
                 throw new IllegalArgumentException("无效的签名步骤: " + step);
@@ -198,41 +159,6 @@ public class BscWithdrawalSignServiceImpl {
     }
 
 
-    /**
-     * 构建简短异常信息
-     */
-    private String buildSimpleErrorMsg(Exception e) {
-        if (e == null) {
-            return "未知异常";
-        }
-
-        String msg = e.getMessage();
-        if (msg == null || msg.trim().isEmpty()) {
-            msg = e.getClass().getSimpleName();
-        } else {
-            msg = e.getClass().getSimpleName() + ": " + msg;
-        }
-
-        return safeReason(msg);
-    }
-
-    /**
-     * 失败原因截断，避免超过数据库字段长度
-     */
-    private String safeReason(String reason) {
-        if (reason == null) {
-            return null;
-        }
-
-        reason = reason.trim();
-        int maxLen = 500;
-
-        if (reason.length() <= maxLen) {
-            return reason;
-        }
-
-        return reason.substring(0, maxLen);
-    }
 }
 
 

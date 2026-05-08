@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
@@ -66,7 +67,7 @@ public class BscWithdrawalLogServiceImpl {
         return bscWithdrawalLogMapper.selectBscWithdrawalLogById(id);
     }
 
-
+    @Transactional(rollbackFor = Exception.class)
     public AjaxResult submitSign(BscWithdrawalSignSubmit withdrawalAuditReq) {
         // 2. 查询提现记录
         BscWithdrawalLog withdrawalLog = bscWithdrawalLogMapper.getById(withdrawalAuditReq.getWithdrawalLogId());
@@ -116,8 +117,6 @@ public class BscWithdrawalLogServiceImpl {
                 if (!verify) {
                     return AjaxResult.success("验签失败");
                 }
-                withdrawalLog.setLargeAmountPassed(1);
-                bscWithdrawalLogMapper.updateById(withdrawalLog);
                 BscWithdrawalSign sign = new BscWithdrawalSign(withdrawalLog, withdrawalAuditReq, auditStep, auditServerName);
                 sign.setSignDigest(signWithdrawRequest(req, contractAddress));
                 bscWithdrawalSignMapper.insert(sign);
