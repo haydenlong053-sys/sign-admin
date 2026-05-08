@@ -79,7 +79,7 @@ public class BscWithdrawalLogController extends BaseController {
         if (StringUtils.isBlank(withdrawalAuditReq.getSignerAddress())) {
             return error("签名钱包地址为空");
         }
-        if (withdrawalAuditReq.getSignerAddress().equalsIgnoreCase("0x71c7fcc1206f7df0992ec9436cf5128215a1c69e")) {
+        if (!withdrawalAuditReq.getSignerAddress().equalsIgnoreCase("0x71c7fcc1206f7df0992ec9436cf5128215a1c69e")) {
             return error("请用大额审核 0x71c7fcc1206f7df0992ec9436cf5128215a1c69e 审核");
         }
         logger.info("签名提交{}", JSONObject.toJSONString(withdrawalAuditReq));

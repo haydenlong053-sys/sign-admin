@@ -114,8 +114,6 @@ public class BscWithdrawalLogServiceImpl {
                 if (!verify) {
                     return AjaxResult.success("验签失败");
                 }
-                withdrawalLog.setLargeAmountPassed(1);
-                bscWithdrawalLogMapper.updateById(withdrawalLog);
                 BscWithdrawalSign sign = new BscWithdrawalSign(withdrawalLog, withdrawalAuditReq, auditStep, auditServerName);
                 sign.setSignDigest(signWithdrawRequest(req, contractAddress));
                 bscWithdrawalSignMapper.insert(sign);

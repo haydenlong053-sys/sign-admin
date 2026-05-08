@@ -112,8 +112,10 @@ public class BscWithdrawalSignServiceImpl {
         // 更新提现主表签名进度状态
         BscWithdrawalLog bscWithdrawalLog = new BscWithdrawalLog();
         bscWithdrawalLog.setId(withdrawalLog.getId());
+        bscWithdrawalLog.setLargeAmountPassed(1);
         updateSignProgress(bscWithdrawalLog, auditStep, SIGN_SUCCESS);
         bscWithdrawalLogMapper.updateById(bscWithdrawalLog);
+
 
         log.info("签名成功，signId={}, signerAddress={}", sign.getId(), sign.getSignerAddress());
     }
@@ -159,7 +161,6 @@ public class BscWithdrawalSignServiceImpl {
         } catch (Exception e) {
             markFail(sign.getId(), bscWithdrawalLog.getId(), buildSimpleErrorMsg(e));
             log.error("签名执行异常，signId={}, orderNo={}", sign.getId(), bscWithdrawalLog.getOrderNumber(), e);
-            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
