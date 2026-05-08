@@ -54,8 +54,6 @@ public class BscWithdrawalLogServiceImpl {
     private BscWithdrawalSignMapper bscWithdrawalSignMapper;
     @Resource
     private AccessControlServiceImpl accessControlService;
-    @Resource
-    WithdrawSignService withdrawSignService;
 
 
     public List<BscWithdrawalLog> selectBscWithdrawalLogList(BscWithdrawalLog query) {
@@ -67,7 +65,7 @@ public class BscWithdrawalLogServiceImpl {
     }
 
 
-    public AjaxResult submitSign(BscWithdrawalSignSubmit withdrawalAuditReq) throws Exception {
+    public AjaxResult submitSign(BscWithdrawalSignSubmit withdrawalAuditReq) {
         // 1. 参数校验
         if (withdrawalAuditReq == null || withdrawalAuditReq.getWithdrawalLogId() == null) {
             return AjaxResult.error("参数异常");
