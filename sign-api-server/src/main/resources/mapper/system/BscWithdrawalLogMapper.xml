@@ -106,6 +106,7 @@
             <if test="signProgressTwo != null">sign_progress_two = #{signProgressTwo},</if>
             <if test="signProgressThree != null">sign_progress_three = #{signProgressThree},</if>
             <if test="signProgressFour != null">sign_progress_four = #{signProgressFour},</if>
+            <if test="remark != null">remark = #{remark},</if>
             <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
         </set>

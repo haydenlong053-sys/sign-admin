@@ -1,6 +1,7 @@
 package com.ruoyi.system.service;
 
 
+import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.system.domain.BscWithdrawalLog;
 import com.ruoyi.system.domain.BscWithdrawalSign;
 import com.ruoyi.system.mapper.BscWithdrawalLogMapper;
@@ -129,7 +130,7 @@ public class BscWithdrawalSignServiceImpl {
             // 6. 校验当前签名地址是否为链上授权 signer
             Boolean isSigner = accessControlService.isSigner(sign.getSignerAddress(),contractAddress);
             if (isSigner == null || !isSigner) {
-                throw new RuntimeException("当前签名地址不是链上授权signer，signerAddress=" + sign.getSignerAddress());
+                throw new ServiceException("当前签名地址不是链上授权signer，signerAddress=" + sign.getSignerAddress());
             }
             // 7. 更新签名记录为成功
             markSuccess(sign, bscWithdrawalLog, null, bscWithdrawalLog.getOrderNumber());
@@ -139,7 +140,7 @@ public class BscWithdrawalSignServiceImpl {
                     sign.getSignDigest()
             );
             if (signedCount <= 0) {
-                throw new RuntimeException("签名摘要无效，signerAddress=" + sign.getSignerAddress());
+                throw new ServiceException("签名摘要无效，signerAddress=" + sign.getSignerAddress());
             }
             BigInteger amount = convertAmount(bscWithdrawalLog.getAmount());
             // 9. 读取链上要求签名数量
@@ -157,9 +158,9 @@ public class BscWithdrawalSignServiceImpl {
                     sign.getId(), bscWithdrawalLog.getOrderNumber(), signedCount, requiredCount);
 
         } catch (Exception e) {
-            markFail(sign.getId(), bscWithdrawalLog.getId(), buildSimpleErrorMsg(e));
+            //markFail(sign.getId(), bscWithdrawalLog.getId(), buildSimpleErrorMsg(e));
             log.error("签名执行异常，signId={}, orderNo={}", sign.getId(), bscWithdrawalLog.getOrderNumber(), e);
-            throw new RuntimeException(e.getMessage(), e);
+            throw new ServiceException(e.getMessage());
         }
     }
 

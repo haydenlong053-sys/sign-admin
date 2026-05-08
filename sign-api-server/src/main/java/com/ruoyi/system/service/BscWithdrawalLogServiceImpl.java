@@ -1,6 +1,7 @@
 package com.ruoyi.system.service;
 
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.BaseUtil;
 import com.ruoyi.system.domain.BscWithdrawalLog;
 import com.ruoyi.system.domain.BscWithdrawalSign;
@@ -9,6 +10,7 @@ import com.ruoyi.system.domain.req.BscWithdrawalSignSubmit;
 import com.ruoyi.system.mapper.BscWithdrawalLogMapper;
 import com.ruoyi.system.mapper.BscWithdrawalSignMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -66,10 +68,6 @@ public class BscWithdrawalLogServiceImpl {
 
 
     public AjaxResult submitSign(BscWithdrawalSignSubmit withdrawalAuditReq) {
-        // 1. 参数校验
-        if (withdrawalAuditReq == null || withdrawalAuditReq.getWithdrawalLogId() == null) {
-            return AjaxResult.error("参数异常");
-        }
         // 2. 查询提现记录
         BscWithdrawalLog withdrawalLog = bscWithdrawalLogMapper.getById(withdrawalAuditReq.getWithdrawalLogId());
         if (withdrawalLog == null) {
@@ -78,12 +76,16 @@ public class BscWithdrawalLogServiceImpl {
         if (withdrawalLog.getIsLargeAmount() != 1) {
             return AjaxResult.error("该订单不是大额订单");
         }
-        // 3. 审核拒绝
+        // 3. 审核驳回（无需链上签名）
         if (withdrawalAuditReq.getApproved() != null && withdrawalAuditReq.getApproved() == 0) {
-            log.info("审核拒绝，withdrawalLogId={}", withdrawalAuditReq.getWithdrawalLogId());
+            log.info("审核驳回，withdrawalLogId={}，failReason={}",
+                    withdrawalAuditReq.getWithdrawalLogId(), withdrawalAuditReq.getFailReason());
             withdrawalLog.setLargeAmountPassed(2);
+            if (StringUtils.isNotBlank(withdrawalAuditReq.getFailReason())) {
+                withdrawalLog.setRemark(withdrawalAuditReq.getFailReason().trim());
+            }
             bscWithdrawalLogMapper.updateById(withdrawalLog);
-            return AjaxResult.success("审核拒绝 更新订单成功");
+            return AjaxResult.success("审核已驳回");
         }
         // 4. 审核通过（执行签名）
         if (withdrawalAuditReq.getApproved() != null && withdrawalAuditReq.getApproved() == 1) {
@@ -126,7 +128,7 @@ public class BscWithdrawalLogServiceImpl {
 
             } catch (Exception e) {
                 log.error("审核签名执行异常，withdrawalLogId={}", withdrawalLog.getId(), e);
-                return AjaxResult.error("签名执行失败：" + e.getMessage());
+                throw new ServiceException("签名执行失败：" + e.getMessage());
             }
         }
         return AjaxResult.error("审核状态异常");

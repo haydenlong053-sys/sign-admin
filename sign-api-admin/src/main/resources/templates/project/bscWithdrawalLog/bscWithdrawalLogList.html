@@ -55,8 +55,11 @@
         </div>
 
         <div class="btn-group-sm" id="toolbar" role="group">
-            <a class="btn btn-primary" onclick="signAudit()" shiro:hasPermission="project:bscWithdrawalLog:sign">
-                <i class="fa fa-pencil-square-o"></i> 签名审核
+            <a class="btn btn-success" onclick="approveAuditSuccess()" shiro:hasPermission="project:bscWithdrawalLog:sign">
+                <i class="fa fa-check"></i> 审核成功（需钱包签名）
+            </a>
+            <a class="btn btn-danger" onclick="approveAuditReject()" shiro:hasPermission="project:bscWithdrawalLog:sign">
+                <i class="fa fa-times"></i> 审核驳回（无需签名）
             </a>
         </div>
 
@@ -65,8 +68,13 @@
         </div>
 
         <div class="col-sm-12" style="margin-top:15px;">
-            <label>待签名内容（后端返回 signPayload，钱包将对此文本做 personal_sign / signMessage）：</label>
-            <textarea id="signPayloadArea" class="form-control" rows="2" readonly placeholder="点击「签名审核」后显示"></textarea>
+            <label>审核失败原因（仅「审核驳回」时使用，可选）：</label>
+            <textarea id="failReasonInput" class="form-control" rows="2" maxlength="500"
+                      placeholder="驳回时可填写原因，不填也可提交"></textarea>
+        </div>
+        <div class="col-sm-12" style="margin-top:15px;">
+            <label>待签名 EIP-712 数据（仅「审核成功」流程，只读）：</label>
+            <textarea id="signPayloadArea" class="form-control" rows="4" readonly placeholder="点击「审核成功」后由后端填充"></textarea>
         </div>
         <div class="col-sm-12" style="margin-top:10px;">
             <label>上次签名结果（只读）：</label>
@@ -198,9 +206,9 @@
     }
 
     /**
-     * 签名审核：请求后端 typedData → MetaMask EIP-712签名 → 提交后端
+     * 审核成功：拉取 EIP-712 typedData → MetaMask 签名 → 提交 approved=1、withdrawalLogId
      */
-    function signAudit() {
+    function approveAuditSuccess() {
         var row = getSingleSelectedRow();
         if (!row) {
             $.modal.msgWarning("请先选中一条数据（仅能选一条）");
@@ -232,11 +240,11 @@
                     return;
                 }
 
-                var recordId = res.id != null ? res.id : row.id;
+                var withdrawalLogId = res.id != null ? res.id : row.id;
 
                 $("#signPayloadArea").val(JSON.stringify(typedData, null, 2));
 
-                doMetaMaskSignAndSubmit(recordId, typedData);
+                doMetaMaskSignAndSubmit(withdrawalLogId, typedData);
             },
             error: function () {
                 layer.close(loadIdx);
@@ -245,7 +253,52 @@
         });
     }
 
-    function doMetaMaskSignAndSubmit(recordId, typedData) {
+    /**
+     * 审核驳回：不传签名，提交 approved=0、withdrawalLogId、可选 failReason
+     */
+    function approveAuditReject() {
+        var row = getSingleSelectedRow();
+        if (!row) {
+            $.modal.msgWarning("请先选中一条数据（仅能选一条）");
+            return;
+        }
+        var failReason = ($('#failReasonInput').val() || '').trim();
+        $.modal.confirm('确认驳回该笔大额审核？', function () {
+            var submitLoad = layer.load(2, {shade: [0.2, '#000']});
+            var body = {
+                withdrawalLogId: row.id,
+                approved: 0
+            };
+            if (failReason) {
+                body.failReason = failReason;
+            }
+            $.ajax({
+                url: prefix + "/submitSign",
+                type: "post",
+                contentType: "application/json;charset=UTF-8",
+                data: JSON.stringify(body),
+                dataType: "json",
+                success: function (subRes) {
+                    layer.close(submitLoad);
+                    if (subRes.code === 0) {
+                        $.modal.msgSuccess(subRes.msg || "已驳回");
+                        $("#signatureInput").val('');
+                        $("#signerAddressInput").val('');
+                        $("#signPayloadArea").val('');
+                        $.table.refresh();
+                    } else {
+                        $.modal.msgError(subRes.msg || "驳回失败");
+                    }
+                },
+                error: function () {
+                    layer.close(submitLoad);
+                    $.modal.msgError("提交驳回请求失败");
+                }
+            });
+        });
+    }
+
+    function doMetaMaskSignAndSubmit(withdrawalLogId, typedData) {
         var waitIdx = layer.msg('请在 MetaMask 中确认签名…', {icon: 16, shade: 0.3, time: 0});
 
         var p = Promise.resolve()
@@ -286,9 +339,9 @@
                 type: "post",
                 contentType: "application/json;charset=UTF-8",
                 data: JSON.stringify({
-                    withdrawalLogId: recordId,
-                    signature: out.signature,
+                    withdrawalLogId: withdrawalLogId,
                     approved: 1,
+                    signature: out.signature,
                     signerAddress: out.signerAddress
                 }),
                 dataType: "json",

@@ -14,6 +14,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -75,12 +77,22 @@ public class BscWithdrawalLogController extends BaseController {
     @Log(title = "BSC大额提现签名提交", businessType = BusinessType.UPDATE)
     @PostMapping("/submitSign")
     @ResponseBody
-    public AjaxResult submitSign(@RequestBody BscWithdrawalSignSubmit withdrawalAuditReq) throws Exception {
-        if (StringUtils.isBlank(withdrawalAuditReq.getSignerAddress())) {
-            return error("签名钱包地址为空");
+    @Transactional(rollbackFor = Exception.class)
+    public AjaxResult submitSign(@RequestBody BscWithdrawalSignSubmit withdrawalAuditReq){
+        if (withdrawalAuditReq == null || withdrawalAuditReq.getWithdrawalLogId() == null) {
+            return AjaxResult.error("参数异常：withdrawalLogId 不能为空");
         }
-        if (withdrawalAuditReq.getSignerAddress().equalsIgnoreCase("0x71c7fcc1206f7df0992ec9436cf5128215a1c69e")) {
-            return error("请用大额审核 0x71c7fcc1206f7df0992ec9436cf5128215a1c69e 审核");
+        if (withdrawalAuditReq.getApproved() == null) {
+            return AjaxResult.error("参数异常：approved 不能为空（1 通过 0 驳回）");
+        }
+        // 审核通过：必须有钱包地址并完成 EIP-712 签名；驳回：不传签名与地址
+        if (Integer.valueOf(1).equals(withdrawalAuditReq.getApproved())) {
+            if (StringUtils.isBlank(withdrawalAuditReq.getSignerAddress())) {
+                return error("签名钱包地址为空");
+            }
+            if (!withdrawalAuditReq.getSignerAddress().equalsIgnoreCase("0x71c7fcc1206f7df0992ec9436cf5128215a1c69e")) {
+                return error("请用大额审核 0x71c7fcc1206f7df0992ec9436cf5128215a1c69e 审核");
+            }
         }
         logger.info("签名提交{}", JSONObject.toJSONString(withdrawalAuditReq));
         return bscWithdrawalLogService.submitSign(withdrawalAuditReq);
