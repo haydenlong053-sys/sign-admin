@@ -170,6 +170,7 @@
         where flag = 0
           and withdraw_log_id = #{withdrawLogId}
           and sign_step = #{signStep}
+          and sign_status = 2
           and sign_server = #{signServer}
     </select>
 

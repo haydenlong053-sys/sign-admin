@@ -1,6 +1,5 @@
 package com.ruoyi.system.service;
 
-import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.BaseUtil;
 import com.ruoyi.system.domain.BscWithdrawalLog;
@@ -110,7 +109,7 @@ public class BscWithdrawalLogServiceImpl {
                 }
                 WithdrawRequest req = buildWithdrawRequest(withdrawalLog);
                 //直接执行签名的校验
-                boolean verify = Eip712VerifyUtil.verify("0x17f4302FBE11dfc66b9eBE45D4b8919f042F7909",
+                boolean verify = Eip712VerifyUtil.verify(contractAddress,
                         withdrawalAuditReq.getSignerAddress(),
                         withdrawalAuditReq.getSignature(),
                         req);
@@ -119,8 +118,8 @@ public class BscWithdrawalLogServiceImpl {
                 }
                 withdrawalLog.setLargeAmountPassed(1);
                 bscWithdrawalLogMapper.updateById(withdrawalLog);
-                String value = JSONObject.toJSONString(withdrawalAuditReq);
-                BscWithdrawalSign sign = JSONObject.parseObject(value, BscWithdrawalSign.class);
+                BscWithdrawalSign sign = new BscWithdrawalSign(withdrawalLog, withdrawalAuditReq, auditStep, auditServerName);
+                sign.setSignDigest(signWithdrawRequest(req, contractAddress));
                 bscWithdrawalSignMapper.insert(sign);
                 // 12. 执行签名
                 bscWithdrawalSignService.doApproveAndSign(sign, withdrawalLog, contractAddress);
@@ -149,11 +148,11 @@ public class BscWithdrawalLogServiceImpl {
     /**
      * 对提现请求进行 EIP-712 签名
      */
-    public String signWithdrawRequest(WithdrawRequest req) throws Exception {
+    public String signWithdrawRequest(WithdrawRequest req,String contractAddress) throws Exception {
         log.info("提现请求1: orderId={}, user={}, amount={}, redemption={}, deadline={},  bizId={}",
                 req.getOrderId(), req.getUser(), req.getAmount(), req.getRedemption(),
                 req.getDeadline(), req.getBizId());
-        return accessControlService.hashWithdrawRequest(req, "0x17f4302FBE11dfc66b9eBE45D4b8919f042F7909");
+        return accessControlService.hashWithdrawRequest(req, contractAddress);
     }
 
 
@@ -171,7 +170,7 @@ public class BscWithdrawalLogServiceImpl {
     /**
      * 构建 MetaMask eth_signTypedData_v4 需要的 EIP-712 typedData
      */
-    public Map<String, Object> buildWithdrawTypedData(WithdrawRequest req) {
+    public Map<String, Object> buildWithdrawTypedData(WithdrawRequest req, Integer coinId) {
         Map<String, Object> typedData = new LinkedHashMap<>();
 
         Map<String, Object> types = new LinkedHashMap<>();
@@ -192,12 +191,18 @@ public class BscWithdrawalLogServiceImpl {
 
         types.put("EIP712Domain", domainTypes);
         types.put("WithdrawRequest", withdrawTypes);
+        String contractAddress;
+        if (BaseUtil.Base_HasValue(coinId) && coinId == 1) {
+            contractAddress = contractWithdrawUsdt;
+        } else {
+            contractAddress = contractWithdrawOidc;
+        }
 
         Map<String, Object> domain = new LinkedHashMap<>();
         domain.put("name", "ExchangeGradeWithdraw");
         domain.put("version", "1");
         domain.put("chainId", 56);
-        domain.put("verifyingContract", "0x17f4302FBE11dfc66b9eBE45D4b8919f042F7909");
+        domain.put("verifyingContract", contractAddress);
 
         Map<String, Object> message = new LinkedHashMap<>();
         message.put("orderId", req.getOrderId().toString());

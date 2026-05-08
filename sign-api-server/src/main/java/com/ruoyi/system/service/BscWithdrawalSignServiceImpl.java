@@ -107,10 +107,6 @@ public class BscWithdrawalSignServiceImpl {
         update.setSignStatus(2);
         update.setUpdateTime(LocalDateTime.now());
         update.setUserNonce(userNonce);
-        update.setBizId(BigInteger.valueOf(withdrawalLog.getCoinId()));
-        update.setOrderId(orderNo);
-        update.setSignStep(auditStep);
-        update.setSignServer(auditServerName);
         bscWithdrawalSignMapper.updateById(update);
 
         // 更新提现主表签名进度状态

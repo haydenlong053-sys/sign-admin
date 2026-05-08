@@ -2,7 +2,10 @@ package com.ruoyi.system.domain;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ruoyi.system.domain.req.BscWithdrawalSignSubmit;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
@@ -19,6 +22,8 @@ import java.time.LocalDateTime;
  */
 @Data
 @Accessors(chain = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class BscWithdrawalSign implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -40,7 +45,7 @@ public class BscWithdrawalSign implements Serializable {
     private Integer flag;
 
     //"提现申请记录ID，关联 bsc_withdrawal_log.id")
-    private Integer withdrawLogId;
+    private Long withdrawLogId;
 
     //"签名人地址")
     private String signerAddress;
@@ -81,4 +86,19 @@ public class BscWithdrawalSign implements Serializable {
 
     //"签名失败原因")
     private String failReason;
+
+    public BscWithdrawalSign(BscWithdrawalLog withdrawalLog, BscWithdrawalSignSubmit withdrawalAuditReq,Integer signStep,String signServer ) {
+        this.createTime =LocalDateTime.now();
+        this.updateTime = LocalDateTime.now();
+        this.flag = 0;
+        this.withdrawLogId = withdrawalLog.getId();
+        this.signerAddress = withdrawalAuditReq.getSignerAddress();
+        this.signature = withdrawalAuditReq.getSignature();
+        this.signStep = signStep;
+        this.signServer = signServer;
+        this.signTime = LocalDateTime.now();
+        this.orderId = withdrawalLog.getOrderNumber();
+        this.deadline = withdrawalLog.getDeadline();
+        this.bizId = BigInteger.valueOf(withdrawalLog.getCoinId());
+    }
 }

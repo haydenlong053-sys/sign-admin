@@ -56,20 +56,16 @@ public class BscWithdrawalLogController extends BaseController {
     @PostMapping("/signParams/{id}")
     @ResponseBody
     public AjaxResult signParams(@PathVariable("id") Long id) throws Exception {
-        BscWithdrawalLog row = bscWithdrawalLogService.selectBscWithdrawalLogById(id);
-        if (row == null) {
+        BscWithdrawalLog withdrawalLog = bscWithdrawalLogService.selectBscWithdrawalLogById(id);
+        if (withdrawalLog == null) {
             return AjaxResult.error("记录不存在或不符合大额四号待签条件");
         }
-
-        WithdrawRequest withdrawRequest = bscWithdrawalLogService.buildWithdrawRequest(row);
-
-        Map<String, Object> typedData = bscWithdrawalLogService.buildWithdrawTypedData(withdrawRequest);
-
+        WithdrawRequest withdrawRequest = bscWithdrawalLogService.buildWithdrawRequest(withdrawalLog);
+        Map<String, Object> typedData = bscWithdrawalLogService.buildWithdrawTypedData(withdrawRequest, withdrawalLog.getCoinId());
         return AjaxResult.success("操作成功")
                 .put("signPayload", typedData)
-                .put("id", row.getId());
+                .put("id", withdrawalLog.getId());
     }
-
 
 
     /**
@@ -87,6 +83,6 @@ public class BscWithdrawalLogController extends BaseController {
             return error("请用大额审核 0x71c7fcc1206f7df0992ec9436cf5128215a1c69e 审核");
         }
         logger.info("签名提交{}", JSONObject.toJSONString(withdrawalAuditReq));
-       return bscWithdrawalLogService.submitSign(withdrawalAuditReq);
+        return bscWithdrawalLogService.submitSign(withdrawalAuditReq);
     }
 }

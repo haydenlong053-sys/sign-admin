@@ -69,3 +69,6 @@ contract:
   exchangeGradeWithdraw:
     contract-withdraw-u: '0x17f4302FBE11dfc66b9eBE45D4b8919f042F7909'
     contract-withdraw-oidc: '0xEa3f52E0CDedD9B55c6Ea38c98241327EE3665d6'
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

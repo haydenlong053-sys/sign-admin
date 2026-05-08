@@ -51,7 +51,7 @@
             <if test="userId != null and userId != ''">
                 and user_id = #{userId}
             </if>
-            <if test="orderNumber != null">
+            <if test="orderNumber != null and orderNumber!=''">
                 and order_number = #{orderNumber}
             </if>
             <if test="coinId != null">
