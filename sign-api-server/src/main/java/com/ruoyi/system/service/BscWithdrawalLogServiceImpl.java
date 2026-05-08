@@ -67,7 +67,6 @@ public class BscWithdrawalLogServiceImpl {
         return bscWithdrawalLogMapper.selectBscWithdrawalLogById(id);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public AjaxResult submitSign(BscWithdrawalSignSubmit withdrawalAuditReq) {
         // 2. 查询提现记录
         BscWithdrawalLog withdrawalLog = bscWithdrawalLogMapper.getById(withdrawalAuditReq.getWithdrawalLogId());
@@ -77,11 +76,16 @@ public class BscWithdrawalLogServiceImpl {
         if (withdrawalLog.getIsLargeAmount() != 1) {
             return AjaxResult.error("该订单不是大额订单");
         }
+        if (withdrawalLog.getSignProgressFour() != 0 || withdrawalLog.getStatus() != 0) {
+            return AjaxResult.error("改订单不能重复审核");
+        }
         // 3. 审核驳回（无需链上签名）
         if (withdrawalAuditReq.getApproved() != null && withdrawalAuditReq.getApproved() == 0) {
             log.info("审核驳回，withdrawalLogId={}，failReason={}",
                     withdrawalAuditReq.getWithdrawalLogId(), withdrawalAuditReq.getFailReason());
             withdrawalLog.setLargeAmountPassed(2);
+            withdrawalLog.setSignProgressFour(3);
+            withdrawalLog.setStatus(3);
             if (StringUtils.isNotBlank(withdrawalAuditReq.getFailReason())) {
                 withdrawalLog.setRemark(withdrawalAuditReq.getFailReason().trim());
             }

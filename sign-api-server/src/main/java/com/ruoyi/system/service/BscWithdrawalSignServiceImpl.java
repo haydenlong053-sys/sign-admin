@@ -42,8 +42,6 @@ public class BscWithdrawalSignServiceImpl {
     @Value("${withdraw.audit.step}")
     private Integer auditStep;
 
-
-
     /**
      * 代币精度，仅 amountIsRaw=false 时使用
      */
