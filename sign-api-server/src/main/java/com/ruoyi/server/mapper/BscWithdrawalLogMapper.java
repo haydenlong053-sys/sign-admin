@@ -1,6 +1,6 @@
-package com.ruoyi.system.mapper;
+package com.ruoyi.server.mapper;
 
-import com.ruoyi.system.domain.BscWithdrawalLog;
+import com.ruoyi.server.domain.BscWithdrawalLog;
 
 import java.util.List;
 

@@ -1,11 +1,11 @@
-package com.ruoyi.system.service;
+package com.ruoyi.server.service.impl;
 
 
 import com.ruoyi.common.exception.ServiceException;
-import com.ruoyi.system.domain.BscWithdrawalLog;
-import com.ruoyi.system.domain.BscWithdrawalSign;
-import com.ruoyi.system.mapper.BscWithdrawalLogMapper;
-import com.ruoyi.system.mapper.BscWithdrawalSignMapper;
+import com.ruoyi.server.domain.BscWithdrawalLog;
+import com.ruoyi.server.domain.BscWithdrawalSign;
+import com.ruoyi.server.mapper.BscWithdrawalLogMapper;
+import com.ruoyi.server.mapper.BscWithdrawalSignMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

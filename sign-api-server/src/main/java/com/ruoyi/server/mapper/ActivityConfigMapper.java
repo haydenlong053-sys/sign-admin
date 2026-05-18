@@ -1,10 +1,10 @@
-package com.ruoyi.system.mapper;
+package com.ruoyi.server.mapper;
 
 import java.util.List;
 
 import com.ruoyi.common.annotation.DataSource;
 import com.ruoyi.common.enums.DataSourceType;
-import com.ruoyi.system.domain.ActivityConfig;
+import com.ruoyi.server.domain.ActivityConfig;
 
 /**
  * 活动分类配置Mapper接口

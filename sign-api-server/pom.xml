@@ -7,18 +7,6 @@
         <groupId>com.ruoyi</groupId>
         <version>4.7.9</version>
     </parent>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>sign-api-server</artifactId>
@@ -35,6 +23,7 @@
             <groupId>com.ruoyi</groupId>
             <artifactId>sign-api-common</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -58,23 +47,6 @@
             <version>4.5.10</version>
         </dependency>
 
-        <!-- 以太坊签名校验（审核钱包验签，支持多地址逗号分隔） -->
-        <dependency>
-            <groupId>org.web3j</groupId>
-            <artifactId>core</artifactId>
-            <version>4.9.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.squareup.okhttp3</groupId>
-                    <artifactId>okhttp</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.squareup.okhttp3</groupId>
-                    <artifactId>logging-interceptor</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <!-- 然后统一声明高版本 -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
@@ -82,5 +54,18 @@
         </dependency>
 
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

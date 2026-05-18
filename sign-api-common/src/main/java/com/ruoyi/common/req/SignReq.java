@@ -1,4 +1,4 @@
-package com.ruoyi.system.domain.req;
+package com.ruoyi.common.req;
 
 import java.io.Serializable;
 

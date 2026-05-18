@@ -1,4 +1,4 @@
-package com.ruoyi.system.domain;
+package com.ruoyi.common.req;
 
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.StaticStruct;

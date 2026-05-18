@@ -1,7 +1,7 @@
-package com.ruoyi.system.service;
+package com.ruoyi.common.utils;
 
 
-import com.ruoyi.system.domain.WithdrawRequest;
+import com.ruoyi.common.req.WithdrawRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.web3j.crypto.ECDSASignature;
 import org.web3j.crypto.Hash;

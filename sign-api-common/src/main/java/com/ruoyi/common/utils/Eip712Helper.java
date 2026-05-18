@@ -1,7 +1,7 @@
-package com.ruoyi.system.service;
+package com.ruoyi.common.utils;
 
 
-import com.ruoyi.system.domain.WithdrawRequest;
+import com.ruoyi.common.req.WithdrawRequest;
 import org.web3j.crypto.Hash;
 import org.web3j.crypto.Sign;
 import org.web3j.utils.Numeric;

@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('BSC提现对账记录')" />
+    <th:block th:include="include :: datetimepicker-css" />
+    <style>
+        /* 统计卡片样式 */
+        .stat-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 18px;
+            color: #2d3748;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+        }
+        .stat-card.usdt {
+            border-color: #06b6d4;
+        }
+        .stat-card.usdt::before {
+            background: linear-gradient(90deg, #06b6d4, #22d3ee);
+        }
+        .stat-card.odic {
+            border-color: #8b5cf6;
+        }
+        .stat-card.odic::before {
+            background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+        }
+        .stat-card.old-system {
+            border-color: #f97316;
+        }
+        .stat-card.old-system::before {
+            background: linear-gradient(90deg, #f97316, #fb923c);
+        }
+        .stat-card.summary {
+            border-color: #10b981;
+        }
+        .stat-card.summary::before {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+        .stat-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #4a5568;
+            position: relative;
+        }
+        .stat-title::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 30px;
+            height: 2px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 2px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #edf2f7;
+        }
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        .stat-item .stat-value {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+        .stat-item .stat-label {
+            font-size: 11px;
+        }
+        /* 币种标签 */
+        .coin-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .coin-wx { background: #e3f2fd; color: #1976d2; }
+        .coin-webx { background: #f3e5f5; color: #7b1fa2; }
+        .coin-old { background: #fff3e0; color: #f57c00; }
+        /* 对账状态标签 */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-exception { background: #f8d7da; color: #721c24; }
+
+        /* 表格列间距优化 */
+        #bootstrap-table td,
+        #bootstrap-table th {
+            padding: 6px 9px !important;
+        }
+    </style>
+</head>
+<body class="gray-bg">
+    <div class="container-div">
+        <div class="row">
+            <!-- 统计卡片区域 -->
+            <div class="col-sm-12" style="margin-bottom: 10px;">
+                <div id="statsCards"></div>
+            </div>
+            
+            <!-- 时间筛选区域 -->
+            <div class="col-sm-12 search-collapse" style="margin-bottom: 10px;">
+                <form id="stats-filter-form">
+                    <div class="select-list">
+                        <ul>
+                            <li class="select-time">
+                                <label>统计日期：</label>
+                                <input type="text" class="time-input" id="statStartDate" placeholder="开始日期" name="statStartDate"/>
+                                <span>-</span>
+                                <input type="text" class="time-input" id="statEndDate" placeholder="结束日期" name="statEndDate"/>
+                            </li>
+                            <li>
+                                <a class="btn btn-primary btn-rounded btn-sm" onclick="filterStatsByDate()"><i class="fa fa-search"></i>&nbsp;筛选</a>
+                                <a class="btn btn-warning btn-rounded btn-sm" onclick="resetStatsFilter()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                            </li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 搜索区域 -->
+            <div class="col-sm-12 search-collapse">
+                <form id="reconcile-form">
+                    <div class="select-list">
+                        <ul>
+                            <li>
+                                业务订单号：<input type="text" name="bizOrderNumber" placeholder="请输入业务订单号"/>
+                            </li>
+                            <li>
+                                链上订单号：<input type="text" name="chainOrderId" placeholder="请输入链上订单号"/>
+                            </li>
+                            <li>
+                                用户ID：<input type="text" name="bizUserId" placeholder="请输入用户ID"/>
+                            </li>
+                            <li>
+                                币种：
+                                <select name="bizCoinId">
+                                    <option value="">所有</option>
+                                    <option value="1">WX</option>
+                                    <option value="2">WEBX</option>
+                                    <option value="3">链桥老系统</option>
+                                </select>
+                            </li>
+                            <li>
+                                对账状态：
+                                <select name="reconcileStatus">
+                                    <option value="">所有</option>
+                                    <option value="0">待对账</option>
+                                    <option value="1">对账成功</option>
+                                    <option value="2">对账异常</option>
+                                </select>
+                            </li>
+                            <li>
+                                链上交易Hash：<input type="text" name="chainTxHash" placeholder="请输入交易Hash"/>
+                            </li>
+                            <li class="select-time">
+                                <label>创建时间： </label>
+                                <input type="text" class="time-input" id="startTime" placeholder="开始时间" name="params[beginTime]"/>
+                                <span>-</span>
+                                <input type="text" class="time-input" id="endTime" placeholder="结束时间" name="params[endTime]"/>
+                            </li>
+                            <li>
+                                <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
+                                <a class="btn btn-warning btn-rounded btn-sm" onclick="resetSearchForm()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                            </li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 工具栏 -->
+            <div class="btn-group-sm" id="toolbar" role="group">
+                <a class="btn btn-warning" onclick="$.table.exportExcel()" shiro:hasPermission="project:withdrawReconcile:export">
+                    <i class="fa fa-download"></i> 导出
+                </a>
+                <a class="btn btn-info" onclick="refreshStats()">
+                    <i class="fa fa-refresh"></i> 刷新统计
+                </a>
+            </div>
+
+            <!-- 列表区域 -->
+            <div class="col-sm-12 select-table table-striped">
+                <table id="bootstrap-table"></table>
+            </div>
+        </div>
+    </div>
+    <th:block th:include="include :: footer" />
+    <th:block th:include="include :: datetimepicker-js" />
+    <script th:inline="javascript">
+        var prefix = ctx + "project/withdrawReconcile";
+
+        $(function() {
+            // 初始化表格
+            var options = {
+                id: "bootstrap-table",
+                formId: "reconcile-form",
+                url: prefix + "/list",
+                exportUrl: prefix + "/export",
+                sortName: "createTime",
+                sortOrder: "desc",
+                modalName: "BSC提现对账记录",
+                pageSize: 10,
+                pageList: [10, 25, 50, 100],
+                pagination: true,
+                sidePagination: "server",
+                queryParams: function(params) {
+                    var searchForm = $.common.formToJSON("reconcile-form");
+                    // 构建请求参数
+                    return $.extend({}, searchForm, {
+                        pageNum: params.offset ? Math.ceil(params.offset / params.limit) + 1 : 1,
+                        pageSize: params.limit || 10,
+                        orderByColumn: params.sort || 'createTime',
+                        isAsc: params.order || 'desc'
+                    });
+                },
+                columns: [
+                    {
+                        field: 'id',
+                        title: 'ID',
+                        visible: false,
+                        align: 'center'
+                    },
+                    {
+                        field: 'bizOrderNumber',
+                        title: '业务订单号',
+                        align: 'center',
+                        width: 200,
+                        formatter: function(value, row, index) {
+                            if (!value) return '-';
+                            return '<span title="' + value + '" style="cursor:pointer;" onclick="copyToClipboard(\'' + value + '\')">' + 
+                                   $.table.tooltip(value, 15) + '</span>';
+                        }
+                    },
+                    {
+                        field: 'bizCoinId',
+                        title: '币种',
+                        align: 'center',
+                        width: 130,
+                        formatter: function(value, row, index) {
+                            var coinMap = {1: 'WX', 2: 'WEBX', 3: '链桥老系统'};
+                            var coinClass = {1: 'coin-wx', 2: 'coin-webx', 3: 'coin-old'};
+                            return '<span class="coin-badge ' + (coinClass[value] || '') + '">' + (coinMap[value] || '-') + '</span>';
+                        }
+                    },
+                    {
+                        field: 'bizOriginType',
+                        title: '来源',
+                        align: 'center',
+                        width: 110,
+                        formatter: function(value, row, index) {
+                            var typeMap = {1: '链桥', 2: 'IM'};
+                            return typeMap[value] || '-';
+                        }
+                    },
+                    {
+                        field: 'bizUserId',
+                        title: '业务用户ID',
+                        align: 'center',
+                        width: 160,
+                        formatter: function(value, row, index) {
+                            return $.table.tooltip(value, 12);
+                        }
+                    },
+                    {
+                        field: 'bizStatus',
+                        title: '业务状态',
+                        align: 'center',
+                        width: 130,
+                        formatter: function(value, row, index) {
+                            var statusMap = {0: '发起提现', 1: '正在提现', 2: '提现成功', 3: '提现失败'};
+                            var statusClass = {0: 'label-default', 1: 'label-info', 2: 'label-success', 3: 'label-danger'};
+                            return '<span class="label ' + (statusClass[value] || 'label-default') + '">' + (statusMap[value] || '-') + '</span>';
+                        }
+                    },
+                    {
+                        field: 'bizAmount',
+                        title: '业务金额',
+                        align: 'center',
+                        width: 130,
+                        formatter: function(value, row, index) {
+                            return value ? parseFloat(value).toFixed(2) : '0.00';
+                        }
+                    },
+                    {
+                        field: 'bizRedemption',
+                        title: '业务类型',
+                        align: 'center',
+                        width: 120,
+                        formatter: function(value, row, index) {
+                            var typeMap = {0: '正常出账', 1: '闪兑出账'};
+                            return typeMap[value] || '-';
+                        }
+                    },
+                    {
+                        field: 'bizHash',
+                        title: '业务Hash',
+                        align: 'center',
+                        width: 170,
+                        formatter: function(value, row, index) {
+                            if (!value) return '-';
+                            return '<span title="' + value + '" style="cursor:pointer;" onclick="copyToClipboard(\'' + value + '\')">' + 
+                                   value.substring(0, 8) + '...' + value.substring(value.length - 6) + '</span>';
+                        }
+                    },
+                    {
+                        field: 'chainOrderId',
+                        title: '链上订单号',
+                        align: 'center',
+                        width: 200,
+                        formatter: function(value, row, index) {
+                            if (!value) return '-';
+                            return '<span title="' + value + '" style="cursor:pointer;" onclick="copyToClipboard(\'' + value + '\')">' + 
+                                   $.table.tooltip(value, 15) + '</span>';
+                        }
+                    },
+                    {
+                        field: 'chainUserAddress',
+                        title: '链上收款地址',
+                        align: 'center',
+                        width: 190,
+                        formatter: function(value, row, index) {
+                            if (!value) return '-';
+                            return '<span title="' + value + '" style="cursor:pointer;" onclick="copyToClipboard(\'' + value + '\')">' + 
+                                   value.substring(0, 10) + '...' + value.substring(value.length - 8) + '</span>';
+                        }
+                    },
+                    {
+                        field: 'chainAmount',
+                        title: '链上金额',
+                        align: 'center',
+                        width: 130,
+                        formatter: function(value, row, index) {
+                            return value ? parseFloat(value).toFixed(2) : '0.00';
+                        }
+                    },
+                    {
+                        field: 'chainRedemption',
+                        title: '链上类型',
+                        align: 'center',
+                        width: 120,
+                        formatter: function(value, row, index) {
+                            var typeMap = {0: '正常提币', 1: '闪兑提币'};
+                            return typeMap[value] || '-';
+                        }
+                    },
+                    {
+                        field: 'chainTxHash',
+                        title: '链上交易Hash',
+                        align: 'center',
+                        width: 170,
+                        formatter: function(value, row, index) {
+                            if (!value) return '-';
+                            return '<span title="' + value + '" style="cursor:pointer;" onclick="copyToClipboard(\'' + value + '\')">' + 
+                                   value.substring(0, 8) + '...' + value.substring(value.length - 6) + '</span>';
+                        }
+                    },
+                    {
+                        field: 'chainTimestamp',
+                        title: '链上时间',
+                        align: 'center',
+                        width: 180
+                    },
+                    {
+                        field: 'reconcileStatus',
+                        title: '对账状态',
+                        align: 'center',
+                        width: 130,
+                        formatter: function(value, row, index) {
+                            var statusMap = {0: '待对账', 1: '对账成功', 2: '对账异常'};
+                            var statusClass = {0: 'status-pending', 1: 'status-success', 2: 'status-exception'};
+                            return '<span class="status-badge ' + (statusClass[value] || '') + '">' + (statusMap[value] || '-') + '</span>';
+                        }
+                    },
+                    {
+                        field: 'reconcileType',
+                        title: '对账结果',
+                        align: 'center',
+                        width: 150,
+                        formatter: function(value, row, index) {
+                            var typeMap = {
+                                1: '完全一致',
+                                2: '业务有链上无',
+                                3: '链上有业务无',
+                                4: '金额不一致',
+                                5: 'Hash不一致',
+                                6: '用户不一致',
+                                7: '类型不一致'
+                            };
+                            return typeMap[value] || '-';
+                        }
+                    },
+                    {
+                        field: 'reconcileTime',
+                        title: '对账时间',
+                        align: 'center',
+                        width: 180
+                    },
+                    {
+                        field: 'reconcileRemark',
+                        title: '备注',
+                        align: 'center',
+                        width: 200,
+                        formatter: function(value, row, index) {
+                            if (!value || value === '') return '-';
+                            return $.table.tooltip(value, 7);
+                        }
+                    },
+                    {
+                        field: 'createTime',
+                        title: '创建时间',
+                        align: 'center',
+                        width: 180
+                    }
+                ]
+            };
+            $.table.init(options);
+            // 加载统计数据
+            loadStats();
+        });
+
+        // 加载统计数据
+        function loadStats(startDate, endDate) {
+            var url = prefix + "/stats/outbound";
+            var data = {};
+            if (startDate) {
+                data.startDate = startDate;
+            }
+            if (endDate) {
+                data.endDate = endDate;
+            }
+            
+            $.ajax({
+                url: url,
+                type: "post",
+                dataType: "json",
+                data: data,
+                success: function(result) {
+                    if (result.code == 0 && result.data) {
+                        renderStatsCards(result.data);
+                    }
+                }
+            });
+        }
+        
+        // 按日期筛选统计
+        function filterStatsByDate() {
+            var startDate = $('#statStartDate').val();
+            var endDate = $('#statEndDate').val();
+            
+            if (!startDate && !endDate) {
+                $.modal.msgWarning("请选择统计日期范围");
+                return;
+            }
+            
+            if (startDate && endDate && startDate > endDate) {
+                $.modal.msgWarning("开始日期不能大于结束日期");
+                return;
+            }
+            
+            loadStats(startDate, endDate);
+        }
+        
+        // 重置统计筛选
+        function resetStatsFilter() {
+            $('#statStartDate').val('');
+            $('#statEndDate').val('');
+            loadStats();
+        }
+
+        // 渲染统计卡片
+        function renderStatsCards(stats) {
+            var html = '<div class="row">';
+            
+            // 定义所有需要显示的币种配置
+            var coinConfigs = [
+                { coinId: 1, coinName: 'WX', coinClass: 'usdt' },
+                { coinId: 2, coinName: 'WEBX', coinClass: 'odic' },
+                { coinId: 3, coinName: '链桥老系统', coinClass: 'old-system' }
+            ];
+            
+            // 将接口返回的数据转换为 Map，方便查找
+            var statsMap = {};
+            if (stats && stats.length > 0) {
+                stats.forEach(function(stat) {
+                    statsMap[stat.coinId] = stat;
+                });
+            }
+            
+            // 为每个币种生成卡片（即使没有数据也显示）
+            coinConfigs.forEach(function(config) {
+                var stat = statsMap[config.coinId] || {};
+                var totalOutCount = stat.totalOutCount || 0;
+                var totalOutAmount = stat.totalOutAmount || 0;
+                var yesterdayOutCount = stat.yesterdayOutCount || 0;
+                var yesterdayOutAmount = stat.yesterdayOutAmount || 0;
+                var todayOutCount = stat.todayOutCount || 0;
+                var todayOutAmount = stat.todayOutAmount || 0;
+                
+                html += '<div class="col-md-4">';
+                html += '  <div class="stat-card ' + config.coinClass + '">';
+                html += '    <div class="stat-title"><i class="fa fa-paper-plane" style="margin-right: 8px;"></i>' + config.coinName + ' - 出账统计</div>';
+                html += '    <div class="stat-row">';
+                html += '      <div class="stat-item">';
+                html += '        <div class="stat-value">' + totalOutCount + '</div>';
+                html += '        <div class="stat-label">总出账笔数</div>';
+                html += '      </div>';
+                html += '      <div class="stat-item">';
+                html += '        <div class="stat-value">' + formatAmount(totalOutAmount) + '</div>';
+                html += '        <div class="stat-label">总出账金额</div>';
+                html += '      </div>';
+                html += '    </div>';
+                html += '    <div class="stat-row">';
+                html += '      <div class="stat-item">';
+                html += '        <div class="stat-value" style="color:#8b5cf6;">' + yesterdayOutCount + '</div>';
+                html += '        <div class="stat-label">昨日出账笔数</div>';
+                html += '      </div>';
+                html += '      <div class="stat-item">';
+                html += '        <div class="stat-value" style="color:#8b5cf6;">' + formatAmount(yesterdayOutAmount) + '</div>';
+                html += '        <div class="stat-label">昨日出账金额</div>';
+                html += '      </div>';
+                html += '    </div>';
+                html += '    <div class="stat-row">';
+                html += '      <div class="stat-item">';
+                html += '        <div class="stat-value" style="color:#10b981;">' + todayOutCount + '</div>';
+                html += '        <div class="stat-label">当日出账笔数</div>';
+                html += '      </div>';
+                html += '      <div class="stat-item">';
+                html += '        <div class="stat-value" style="color:#10b981;">' + formatAmount(todayOutAmount) + '</div>';
+                html += '        <div class="stat-label">当日出账金额</div>';
+                html += '      </div>';
+                html += '    </div>';
+                html += '  </div>';
+                html += '</div>';
+            });
+
+            html += '</div>';
+            $('#statsCards').html(html);
+        }
+
+        // 刷新统计
+        function refreshStats() {
+            $.modal.loading("正在刷新统计数据...");
+            loadStats();
+            setTimeout(function() {
+                $.modal.closeLoading();
+            }, 500);
+        }
+
+        // 格式化金额
+        function formatAmount(amount) {
+            if (!amount) return '0.00';
+            return parseFloat(amount).toFixed(2);
+        }
+
+        // 复制到剪贴板
+        function copyToClipboard(text) {
+            var input = document.createElement('input');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            $.modal.msgSuccess("已复制到剪贴板");
+        }
+
+        // 重置搜索表单
+        function resetSearchForm() {
+            // 清空表单所有输入框
+            $('#reconcile-form')[0].reset();
+            // 重置分页到第 1 页
+            $('#bootstrap-table').bootstrapTable('selectPage', 1);
+            // 刷新表格，重新加载数据
+            $.table.search();
+        }
+    </script>
+</body>
+</html>

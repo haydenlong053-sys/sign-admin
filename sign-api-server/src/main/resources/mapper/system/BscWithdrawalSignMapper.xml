@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.system.mapper.BscWithdrawalSignMapper">
+<mapper namespace="com.ruoyi.server.mapper.BscWithdrawalSignMapper">
 
-    <resultMap type="com.ruoyi.system.domain.BscWithdrawalSign" id="BscWithdrawalSignResult">
+    <resultMap type="com.ruoyi.server.domain.BscWithdrawalSign" id="BscWithdrawalSignResult">
         <result property="id" column="id"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
@@ -34,7 +34,7 @@
         from bsc_withdrawal_sign
     </sql>
 
-    <select id="selectBscWithdrawalSignList" parameterType="com.ruoyi.system.domain.BscWithdrawalSign"
+    <select id="selectBscWithdrawalSignList" parameterType="com.ruoyi.server.domain.BscWithdrawalSign"
             resultMap="BscWithdrawalSignResult">
         <include refid="selectBscWithdrawalSignVo"/>
         <where>
@@ -78,7 +78,7 @@
         limit 1
     </select>
 
-    <insert id="insert" parameterType="com.ruoyi.system.domain.BscWithdrawalSign" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="com.ruoyi.server.domain.BscWithdrawalSign" useGeneratedKeys="true" keyProperty="id">
         insert into bsc_withdrawal_sign
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="createTime != null">create_time,</if>
@@ -124,7 +124,7 @@
         </trim>
     </insert>
 
-    <update id="updateById" parameterType="com.ruoyi.system.domain.BscWithdrawalSign">
+    <update id="updateById" parameterType="com.ruoyi.server.domain.BscWithdrawalSign">
         update bsc_withdrawal_sign
         <set>
             <if test="updateTime != null">update_time = #{updateTime},</if>
@@ -148,7 +148,7 @@
         where id = #{id}
     </update>
 
-    <update id="updateByWithdrawLogIdAndStep" parameterType="com.ruoyi.system.domain.BscWithdrawalSign">
+    <update id="updateByWithdrawLogIdAndStep" parameterType="com.ruoyi.server.domain.BscWithdrawalSign">
         update bsc_withdrawal_sign
         <set>
             <if test="updateTime != null">update_time = #{updateTime},</if>

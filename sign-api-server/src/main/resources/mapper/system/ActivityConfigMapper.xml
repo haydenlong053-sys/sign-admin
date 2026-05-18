@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.system.mapper.ActivityConfigMapper">
+<mapper namespace="com.ruoyi.server.mapper.ActivityConfigMapper">
     
-    <resultMap type="com.ruoyi.system.domain.ActivityConfig" id="ActivityConfigResult">
+    <resultMap type="com.ruoyi.server.domain.ActivityConfig" id="ActivityConfigResult">
         <result property="id"    column="id"    />
         <result property="createTime"    column="create_time"    />
         <result property="updateTime"    column="update_time"    />
@@ -17,7 +17,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select id, create_time, update_time, flag, activity_name, lang from activity_config
     </sql>
 
-    <select id="selectActivityConfigList" parameterType="com.ruoyi.system.domain.ActivityConfig" resultMap="ActivityConfigResult">
+    <select id="selectActivityConfigList" parameterType="com.ruoyi.server.domain.ActivityConfig" resultMap="ActivityConfigResult">
         <include refid="selectActivityConfigVo"/>
         <where>
             <if test="id != null "> and id = #{id}</if>
@@ -29,7 +29,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by id desc
     </select>
 
-    <select id="findActivityConfig" parameterType="com.ruoyi.system.domain.ActivityConfig" resultMap="ActivityConfigResult">
+    <select id="findActivityConfig" parameterType="com.ruoyi.server.domain.ActivityConfig" resultMap="ActivityConfigResult">
         <include refid="selectActivityConfigVo"/>
         <where>
             <if test="id != null "> and id = #{id}</if>
@@ -45,7 +45,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where id = #{id}
     </select>
     
-    <insert id="insertActivityConfig" parameterType="com.ruoyi.system.domain.ActivityConfig" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertActivityConfig" parameterType="com.ruoyi.server.domain.ActivityConfig" useGeneratedKeys="true" keyProperty="id">
         insert into activity_config
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="createTime != null">create_time,</if>
@@ -63,7 +63,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateActivityConfig" parameterType="com.ruoyi.system.domain.ActivityConfig">
+    <update id="updateActivityConfig" parameterType="com.ruoyi.server.domain.ActivityConfig">
         update activity_config
         <trim prefix="SET" suffixOverrides=",">
             <if test="createTime != null">create_time = #{createTime},</if>

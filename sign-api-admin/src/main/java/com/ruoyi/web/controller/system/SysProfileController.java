@@ -1,7 +1,6 @@
 package com.ruoyi.web.controller.system;
 
 import com.ruoyi.common.annotation.Log;
-import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.constant.S3Properties;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -10,8 +9,6 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.ShiroUtils;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.common.utils.file.FileUploadUtils;
-import com.ruoyi.common.utils.file.MimeTypeUtils;
 import com.ruoyi.framework.shiro.service.SysPasswordService;
 import com.ruoyi.system.service.ISysUserService;
 import org.slf4j.Logger;

@@ -1,19 +1,19 @@
-package com.ruoyi.system.service;
+package com.ruoyi.server.service.impl;
 
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.BaseUtil;
-import com.ruoyi.system.domain.BscWithdrawalLog;
-import com.ruoyi.system.domain.BscWithdrawalSign;
-import com.ruoyi.system.domain.WithdrawRequest;
-import com.ruoyi.system.domain.req.BscWithdrawalSignSubmit;
-import com.ruoyi.system.mapper.BscWithdrawalLogMapper;
-import com.ruoyi.system.mapper.BscWithdrawalSignMapper;
+import com.ruoyi.common.utils.Eip712VerifyUtil;
+import com.ruoyi.server.domain.BscWithdrawalLog;
+import com.ruoyi.server.domain.BscWithdrawalSign;
+import com.ruoyi.common.req.WithdrawRequest;
+import com.ruoyi.common.req.BscWithdrawalSignSubmit;
+import com.ruoyi.server.mapper.BscWithdrawalLogMapper;
+import com.ruoyi.server.mapper.BscWithdrawalSignMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;

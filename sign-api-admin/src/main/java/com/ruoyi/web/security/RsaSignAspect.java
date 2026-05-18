@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
@@ -100,8 +99,8 @@ public class RsaSignAspect {
                 if (arg == null) continue;
 
                 // 无额外参数接口
-                if (arg instanceof com.ruoyi.system.domain.req.SignReq) {
-                    com.ruoyi.system.domain.req.SignReq s = (com.ruoyi.system.domain.req.SignReq) arg;
+                if (arg instanceof com.ruoyi.common.req.SignReq) {
+                    com.ruoyi.common.req.SignReq s = (com.ruoyi.common.req.SignReq) arg;
                     appId = s.getAppId();
                     nonce = s.getNonce();
                     timestamp = s.getTimestamp();
@@ -111,8 +110,8 @@ public class RsaSignAspect {
 
                 // 有额外参数接口
                 Object signObj = invokeGetter(arg, "getSign");
-                if (signObj instanceof com.ruoyi.system.domain.req.SignReq) {
-                    com.ruoyi.system.domain.req.SignReq s = (com.ruoyi.system.domain.req.SignReq) signObj;
+                if (signObj instanceof com.ruoyi.common.req.SignReq) {
+                    com.ruoyi.common.req.SignReq s = (com.ruoyi.common.req.SignReq) signObj;
                     appId = s.getAppId();
                     nonce = s.getNonce();
                     timestamp = s.getTimestamp();

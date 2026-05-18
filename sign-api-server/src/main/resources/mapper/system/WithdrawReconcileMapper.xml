@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.server.mapper.WithdrawReconcileMapper">
+    
+    <resultMap type="WithdrawReconcileLog" id="WithdrawReconcileLogResult">
+        <result property="id"                       column="id"                        />
+        <result property="flag"                     column="flag"                      />
+        <result property="createTime"               column="create_time"               />
+        <result property="updateTime"               column="update_time"               />
+        <result property="bizOrderNumber"           column="biz_order_number"          />
+        <result property="bizOrderExists"           column="biz_order_exists"          />
+        <result property="bizOriginType"            column="biz_origin_type"           />
+        <result property="bizUserId"                column="biz_user_id"               />
+        <result property="bizCoinId"                column="biz_coin_id"               />
+        <result property="bizToAddress"             column="biz_to_address"            />
+        <result property="bizStatus"                column="biz_status"                />
+        <result property="bizAmount"                column="biz_amount"                />
+        <result property="bizRedemption"            column="biz_redemption"            />
+        <result property="bizHash"                  column="biz_hash"                  />
+        <result property="chainOrderId"             column="chain_order_id"            />
+        <result property="chainUserAddress"         column="chain_user_address"        />
+        <result property="chainAmount"              column="chain_amount"              />
+        <result property="chainRedemption"          column="chain_redemption"          />
+        <result property="chainTxHash"              column="chain_tx_hash"             />
+        <result property="chainBlockNumber"         column="chain_block_number"        />
+        <result property="chainLogIndex"            column="chain_log_index"           />
+        <result property="chainExecutor"            column="chain_executor"            />
+        <result property="chainTimestamp"           column="chain_timestamp"           />
+        <result property="chainContractType"        column="chain_contract_type"       />
+        <result property="chainContractAddress"     column="chain_contract_address"    />
+        <result property="reconcileStatusMatch"     column="reconcile_status_match"    />
+        <result property="reconcileAmountMatch"     column="reconcile_amount_match"    />
+        <result property="reconcileUserMatch"       column="reconcile_user_match"      />
+        <result property="reconcileHashMatch"       column="reconcile_hash_match"      />
+        <result property="reconcileRedemptionMatch" column="reconcile_redemption_match"/>
+        <result property="reconcileStatus"          column="reconcile_status"          />
+        <result property="reconcileType"            column="reconcile_type"            />
+        <result property="reconcileRemark"          column="reconcile_remark"          />
+        <result property="reconcileTime"            column="reconcile_time"            />
+    </resultMap>
+
+    <resultMap type="WithdrawReconcileStat" id="WithdrawReconcileStatResult">
+        <result property="id"               column="id"                />
+        <result property="statDate"         column="stat_date"         />
+        <result property="coinId"           column="coin_id"           />
+        <result property="coinName"         column="coin_name"         />
+        <result property="totalCount"       column="total_count"       />
+        <result property="totalAmount"      column="total_amount"      />
+        <result property="successCount"     column="success_count"     />
+        <result property="successAmount"    column="success_amount"    />
+        <result property="exceptionCount"   column="exception_count"   />
+        <result property="exceptionAmount"  column="exception_amount"  />
+        <result property="createTime"       column="create_time"       />
+        <result property="updateTime"       column="update_time"       />
+    </resultMap>
+
+    <sql id="selectWithdrawReconcileLogVo">
+        select id, flag, create_time, update_time, biz_order_number, biz_order_exists,
+               biz_origin_type, biz_user_id, biz_coin_id, biz_to_address, biz_status,
+               biz_amount, biz_redemption, biz_hash, chain_order_id, chain_user_address,
+               chain_amount, chain_redemption, chain_tx_hash, chain_block_number,
+               chain_log_index, chain_executor, chain_timestamp, chain_contract_type,
+               chain_contract_address, reconcile_status_match, reconcile_amount_match,
+               reconcile_user_match, reconcile_hash_match, reconcile_redemption_match,
+               reconcile_status, reconcile_type, reconcile_remark, reconcile_time
+        from withdraw_reconcile_log
+    </sql>
+
+    <select id="selectWithdrawReconcileLogList" parameterType="WithdrawReconcileLog" resultMap="WithdrawReconcileLogResult">
+        <include refid="selectWithdrawReconcileLogVo"/>
+        <where>
+            flag = 0
+            <if test="bizOrderNumber != null and bizOrderNumber != ''">
+                AND biz_order_number = #{bizOrderNumber}
+            </if>
+            <if test="chainOrderId != null and chainOrderId != ''">
+                AND chain_order_id = #{chainOrderId}
+            </if>
+            <if test="bizCoinId != null">
+                AND biz_coin_id = #{bizCoinId}
+            </if>
+            <if test="bizStatus != null">
+                AND biz_status = #{bizStatus}
+            </if>
+            <if test="reconcileStatus != null">
+                AND reconcile_status = #{reconcileStatus}
+            </if>
+            <if test="reconcileType != null">
+                AND reconcile_type = #{reconcileType}
+            </if>
+            <if test="chainTxHash != null and chainTxHash != ''">
+                AND chain_tx_hash like concat('%', #{chainTxHash}, '%')
+            </if>
+            <if test="bizUserId != null and bizUserId != ''">
+                AND biz_user_id like concat('%', #{bizUserId}, '%')
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                AND date_format(create_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                AND date_format(create_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <!-- 查询出账统计数据（按币种+时间维度） -->
+    <select id="selectOutboundStats" resultType="com.ruoyi.server.domain.WithdrawReconcileStatDTO">
+        SELECT 
+            coin_id AS coinId,
+            coin_name AS coinName,
+            -- 总出账统计（指定时间范围内的数据）
+            COALESCE(SUM(total_count), 0) AS totalOutCount,
+            COALESCE(SUM(total_amount), 0) AS totalOutAmount,
+            -- 昨日出账统计
+            COALESCE(SUM(CASE WHEN stat_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN total_count ELSE 0 END), 0) AS yesterdayOutCount,
+            COALESCE(SUM(CASE WHEN stat_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN total_amount ELSE 0 END), 0) AS yesterdayOutAmount,
+            -- 当日出账统计
+            COALESCE(SUM(CASE WHEN stat_date = CURDATE() THEN total_count ELSE 0 END), 0) AS todayOutCount,
+            COALESCE(SUM(CASE WHEN stat_date = CURDATE() THEN total_amount ELSE 0 END), 0) AS todayOutAmount
+        FROM withdraw_reconcile_stat
+        <where>
+            <if test="startDate != null and startDate != ''">
+                AND stat_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND stat_date &lt;= #{endDate}
+            </if>
+        </where>
+        GROUP BY coin_id, coin_name
+        ORDER BY coin_id
+    </select>
+</mapper>

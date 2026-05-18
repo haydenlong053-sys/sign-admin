@@ -1,8 +1,8 @@
-package com.ruoyi.system.domain;
+package com.ruoyi.server.domain;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.ruoyi.system.domain.req.BscWithdrawalSignSubmit;
+import com.ruoyi.common.req.BscWithdrawalSignSubmit;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

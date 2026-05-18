@@ -1,7 +1,7 @@
-package com.ruoyi.system.service;
+package com.ruoyi.server.service.impl;
 
 
-import com.ruoyi.system.domain.WithdrawRequest;
+import com.ruoyi.common.req.WithdrawRequest;
 import org.springframework.stereotype.Service;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.FunctionReturnDecoder;
